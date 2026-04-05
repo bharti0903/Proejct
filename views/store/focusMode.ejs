@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Focus Mode</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800">
+
+  <%- include("../partials/navbar") %>
+
+  <div class="max-w-6xl mx-auto px-4 py-8">
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-slate-900">Focus Mode</h1>
+      <p class="text-slate-600">
+        Start a countdown session and block distracting websites during focused work.
+      </p>
+    </div>
+
+    <% if (error) { %>
+      <div class="mb-4 p-4 rounded-lg bg-red-100 text-red-700 border border-red-200">
+        <%= error %>
+      </div>
+    <% } %>
+
+    <% if (success) { %>
+      <div class="mb-4 p-4 rounded-lg bg-green-100 text-green-700 border border-green-200">
+        <%= success %>
+      </div>
+    <% } %>
+
+    <div class="grid lg:grid-cols-2 gap-8 mb-8">
+      <div class="bg-white rounded-2xl shadow border border-slate-200 p-6">
+        <h2 class="text-2xl font-bold mb-6">Start Focus Session</h2>
+
+        <div class="grid gap-4">
+          <div>
+            <label class="block mb-2 font-medium">Duration (minutes)</label>
+            <input
+              id="durationMinutes"
+              type="number"
+              min="1"
+              max="720"
+              value="25"
+              class="w-full border rounded-lg px-4 py-3"
+            >
+          </div>
+
+          <div class="flex items-center gap-3">
+            <input id="blockDefaultSites" type="checkbox" checked>
+            <label for="blockDefaultSites" class="font-medium">
+              Block common distracting websites
+            </label>
+          </div>
+
+          <div>
+            <label class="block mb-2 font-medium">Custom sites to block</label>
+            <textarea
+              id="customSites"
+              rows="5"
+              placeholder="Enter one site per line, e.g. youtube.com"
+              class="w-full border rounded-lg px-4 py-3"
+            ></textarea>
+          </div>
+
+          <div class="flex gap-3">
+            <button
+              id="startFocusBtn"
+              type="button"
+              class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition"
+            >
+              Start Focus Mode
+            </button>
+
+            <button
+              id="stopFocusBtn"
+              type="button"
+              class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold transition"
+            >
+              Stop Focus Mode
+            </button>
+          </div>
+
+          <div id="focusMessage" class="hidden p-4 rounded-lg border"></div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow border border-slate-200 p-6">
+        <h2 class="text-2xl font-bold mb-6">Active Session</h2>
+
+        <div class="grid gap-4">
+          <div class="bg-slate-50 border rounded-xl p-5">
+            <p class="text-sm text-slate-500">Status</p>
+            <p id="sessionStatus" class="text-2xl font-bold text-slate-900">
+              <%= activeSession ? "Active" : "Inactive" %>
+            </p>
+          </div>
+
+          <div class="bg-slate-50 border rounded-xl p-5">
+            <p class="text-sm text-slate-500">Countdown</p>
+            <p id="countdownValue" class="text-4xl font-bold text-indigo-700">--:--:--</p>
+          </div>
+
+          <div class="bg-slate-50 border rounded-xl p-5">
+            <p class="text-sm text-slate-500">Blocked Sites</p>
+            <p id="blockedSitesCount" class="text-2xl font-bold text-slate-900">
+              <%= activeSession && activeSession.blockedSites ? activeSession.blockedSites.length : 0 %>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow border border-slate-200 p-6 mb-8">
+      <h2 class="text-2xl font-bold mb-4">Default Distracting Sites</h2>
+      <div class="grid md:grid-cols-3 gap-3">
+        <% defaultSites.forEach(site => { %>
+          <div class="border rounded-xl p-3 bg-slate-50 text-sm"><%= site %></div>
+        <% }) %>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow border border-slate-200 p-6">
+      <h2 class="text-2xl font-bold mb-4">Recent Focus Sessions</h2>
+
+      <% if (recentSessions && recentSessions.length > 0) { %>
+        <div class="space-y-4">
+          <% recentSessions.forEach(session => { %>
+            <div class="border rounded-xl p-4">
+              <p><strong>Duration:</strong> <%= session.durationMinutes %> minutes</p>
+              <p><strong>Status:</strong> <%= session.status %></p>
+              <p><strong>Started:</strong> <%= new Date(session.startTime).toLocaleString() %></p>
+              <p><strong>Ends:</strong> <%= new Date(session.endTime).toLocaleString() %></p>
+              <p><strong>Blocked Sites:</strong> <%= session.blockedSites ? session.blockedSites.length : 0 %></p>
+            </div>
+          <% }) %>
+        </div>
+      <% } else { %>
+        <p class="text-slate-500">No focus sessions found.</p>
+      <% } %>
+    </div>
+  </div>
+
+  <%- include("../partials/footer") %>
+
+  <script>
+    const focusMessage = document.getElementById("focusMessage");
+    const startFocusBtn = document.getElementById("startFocusBtn");
+    const stopFocusBtn = document.getElementById("stopFocusBtn");
+    const durationMinutesInput = document.getElementById("durationMinutes");
+    const blockDefaultSitesInput = document.getElementById("blockDefaultSites");
+    const customSitesInput = document.getElementById("customSites");
+    const sessionStatus = document.getElementById("sessionStatus");
+    const countdownValue = document.getElementById("countdownValue");
+    const blockedSitesCount = document.getElementById("blockedSitesCount");
+
+    let countdownInterval = null;
+
+    function showMessage(text, isSuccess) {
+      focusMessage.className = "p-4 rounded-lg border";
+      focusMessage.classList.remove("hidden");
+
+      if (isSuccess) {
+        focusMessage.classList.add("bg-green-100", "text-green-700", "border-green-200");
+      } else {
+        focusMessage.classList.add("bg-red-100", "text-red-700", "border-red-200");
+      }
+
+      focusMessage.textContent = text;
+    }
+
+    function formatCountdown(ms) {
+      if (!ms || ms <= 0) return "00:00:00";
+
+      const totalSeconds = Math.floor(ms / 1000);
+      const hrs = String(Math.floor(totalSeconds / 3600)).padStart(2, "0");
+      const mins = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, "0");
+      const secs = String(totalSeconds % 60).padStart(2, "0");
+      return `${hrs}:${mins}:${secs}`;
+    }
+
+    function startCountdown(ms) {
+      if (countdownInterval) clearInterval(countdownInterval);
+
+      let remaining = ms;
+      countdownValue.textContent = formatCountdown(remaining);
+
+      countdownInterval = setInterval(() => {
+        remaining -= 1000;
+
+        if (remaining <= 0) {
+          clearInterval(countdownInterval);
+          countdownValue.textContent = "00:00:00";
+          sessionStatus.textContent = "Inactive";
+          blockedSitesCount.textContent = "0";
+          showMessage("Focus session completed", true);
+          setTimeout(() => window.location.reload(), 1000);
+          return;
+        }
+
+        countdownValue.textContent = formatCountdown(remaining);
+      }, 1000);
+    }
+
+    async function loadActiveSession() {
+      try {
+        const response = await fetch("/focus-mode/active");
+        const data = await response.json();
+
+        if (!data.success || !data.active) {
+          sessionStatus.textContent = "Inactive";
+          countdownValue.textContent = "00:00:00";
+          blockedSitesCount.textContent = "0";
+          if (countdownInterval) clearInterval(countdownInterval);
+          return;
+        }
+
+        sessionStatus.textContent = "Active";
+        blockedSitesCount.textContent = (data.session.blockedSites || []).length;
+        startCountdown(data.session.remainingMs || 0);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    startFocusBtn.addEventListener("click", async () => {
+      try {
+        const customSites = customSitesInput.value
+          .split("\n")
+          .map(item => item.trim())
+          .filter(Boolean);
+
+        const response = await fetch("/focus-mode/start", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            durationMinutes: Number(durationMinutesInput.value),
+            blockDistractingSites: blockDefaultSitesInput.checked,
+            customSites
+          })
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+          showMessage(data.message || "Failed to start focus mode", false);
+          return;
+        }
+
+        showMessage("Focus session started", true);
+        loadActiveSession();
+      } catch (error) {
+        console.error(error);
+        showMessage("Failed to start focus mode", false);
+      }
+    });
+
+    stopFocusBtn.addEventListener("click", async () => {
+      try {
+        const response = await fetch("/focus-mode/stop", {
+          method: "POST"
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+          showMessage(data.message || "Failed to stop focus mode", false);
+          return;
+        }
+
+        showMessage("Focus session stopped", true);
+        setTimeout(() => window.location.reload(), 700);
+      } catch (error) {
+        console.error(error);
+        showMessage("Failed to stop focus mode", false);
+      }
+    });
+
+    loadActiveSession();
+  </script>
+</body>
+</html>

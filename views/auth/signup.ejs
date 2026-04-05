@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Account - Digital Addiction Awareness</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gradient-to-br from-blue-50 via-white to-indigo-50 font-sans text-slate-800 min-h-screen flex items-center justify-center py-8 sm:py-12">
+
+    <div class="w-full max-w-2xl px-4 sm:px-6">
+        <div class="text-center mb-8">
+            <div class="w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full border-4 border-blue-200 flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <i class="fas fa-mobile-alt text-white text-3xl"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-blue-950 mb-2">Digital Addiction Awareness</h1>
+            <p class="text-slate-500">Join our community and start your digital wellness journey today</p>
+        </div>
+
+        <div class="bg-white rounded-3xl shadow-lg border border-blue-50 p-8 sm:p-10 mb-6">
+            <h2 class="text-2xl font-bold text-blue-950 mb-6">Create Your Account</h2>
+
+            <% if (error) { %>
+                <div class="mb-4 p-3 rounded-lg bg-red-100 text-red-700 border border-red-200">
+                    <%= error %>
+                </div>
+            <% } %>
+
+            <form action="/signup" method="POST" class="space-y-5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">First Name</label>
+                        <input 
+                            type="text" 
+                            name="firstName"
+                            placeholder="First Name" 
+                            class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition" 
+                            required
+                        >
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Last Name</label>
+                        <input 
+                            type="text" 
+                            name="lastName"
+                            placeholder="Last Name" 
+                            class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition" 
+                            required
+                        >
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Email Address</label>
+                    <input 
+                        type="email" 
+                        name="email"
+                        placeholder="you@example.com" 
+                        class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition" 
+                        required
+                    >
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Password</label>
+                    <div class="relative">
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password"
+                            placeholder="••••••••" 
+                            class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition" 
+                            required
+                        >
+                        <button 
+                            type="button" 
+                            class="absolute right-3 top-3 text-slate-500 hover:text-slate-700" 
+                            onclick="togglePassword(event)"
+                        >
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">Confirm Password</label>
+                    <div class="relative">
+                        <input 
+                            type="password" 
+                            id="confirm-password" 
+                            name="confirmPassword"
+                            placeholder="••••••••" 
+                            class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition" 
+                            required
+                        >
+                        <button 
+                            type="button" 
+                            class="absolute right-3 top-3 text-slate-500 hover:text-slate-700" 
+                            onclick="toggleConfirmPassword(event)"
+                        >
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-3">What's your main interest?</label>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <label class="flex items-center gap-3 p-3 border border-slate-300 rounded-lg hover:border-blue-600 cursor-pointer transition">
+                            <input type="radio" name="interest" value="Track Screen Time" class="w-4 h-4 text-blue-600" checked>
+                            <span class="text-sm text-slate-700">Track Screen Time</span>
+                        </label>
+                        <label class="flex items-center gap-3 p-3 border border-slate-300 rounded-lg hover:border-blue-600 cursor-pointer transition">
+                            <input type="radio" name="interest" value="Get Insights" class="w-4 h-4 text-blue-600">
+                            <span class="text-sm text-slate-700">Get Insights</span>
+                        </label>
+                        <label class="flex items-center gap-3 p-3 border border-slate-300 rounded-lg hover:border-blue-600 cursor-pointer transition">
+                            <input type="radio" name="interest" value="Join Challenges" class="w-4 h-4 text-blue-600">
+                            <span class="text-sm text-slate-700">Join Challenges</span>
+                        </label>
+                        <label class="flex items-center gap-3 p-3 border border-slate-300 rounded-lg hover:border-blue-600 cursor-pointer transition">
+                            <input type="radio" name="interest" value="All of the above" class="w-4 h-4 text-blue-600">
+                            <span class="text-sm text-slate-700">All of the above</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-3 p-4 bg-blue-50 rounded-lg border border-blue-100">
+                    <input type="checkbox" name="termsAccepted" class="w-4 h-4 text-blue-600 rounded mt-1" required>
+                    <label class="text-sm text-slate-700">
+                        I agree to the 
+                        <a href="#" class="text-blue-600 hover:text-blue-700 font-medium">Terms of Service</a> and 
+                        <a href="#" class="text-blue-600 hover:text-blue-700 font-medium">Privacy Policy</a>
+                    </label>
+                </div>
+
+                <div class="flex items-start gap-3">
+                    <input type="checkbox" name="newsletter" class="w-4 h-4 text-blue-600 rounded mt-1" checked>
+                    <label class="text-sm text-slate-700">
+                        Send me updates about digital wellness tips and new features
+                    </label>
+                </div>
+
+                <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-bold hover:shadow-lg hover:shadow-blue-300 transition transform hover:scale-105 mt-8">
+                    <i class="fas fa-user-plus mr-2"></i> Create Account
+                </button>
+            </form>
+        </div>
+
+        <div class="text-center">
+            <p class="text-slate-600">Already have an account? 
+                <a href="/login" class="text-blue-600 font-bold hover:text-blue-700 transition">Login here</a>
+            </p>
+        </div>
+
+        <div class="text-center mt-6">
+            <a href="/" class="text-slate-500 hover:text-slate-700 transition flex items-center justify-center gap-2">
+                <i class="fas fa-arrow-left"></i>
+                Back to Home
+            </a>
+        </div>
+
+        <div class="mt-8 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border border-green-100">
+            <div class="flex gap-3">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-shield-alt text-green-600 text-lg mt-1"></i>
+                </div>
+                <div>
+                    <p class="font-semibold text-green-900 text-sm mb-1">We take your privacy seriously</p>
+                    <p class="text-xs text-green-700">Your data is encrypted end-to-end. We never share your information with third parties.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function togglePassword(event) {
+            const passwordInput = document.getElementById("password");
+            const icon = event.currentTarget.querySelector("i");
+
+            if (passwordInput.type === "password") {
+                passwordInput.type = "text";
+                icon.classList.remove("fa-eye");
+                icon.classList.add("fa-eye-slash");
+            } else {
+                passwordInput.type = "password";
+                icon.classList.remove("fa-eye-slash");
+                icon.classList.add("fa-eye");
+            }
+        }
+
+        function toggleConfirmPassword(event) {
+            const passwordInput = document.getElementById("confirm-password");
+            const icon = event.currentTarget.querySelector("i");
+
+            if (passwordInput.type === "password") {
+                passwordInput.type = "text";
+                icon.classList.remove("fa-eye");
+                icon.classList.add("fa-eye-slash");
+            } else {
+                passwordInput.type = "password";
+                icon.classList.remove("fa-eye-slash");
+                icon.classList.add("fa-eye");
+            }
+        }
+    </script>
+
+</body>
+</html>

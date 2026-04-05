@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "Digital Addiction Awareness Tracker",
+  "version": "2.2.0",
+  "description": "Tracks active browser usage and sends it to backend",
+  "permissions": [
+    "tabs",
+    "storage",
+    "alarms",
+    "notifications",
+    "idle"
+  ],
+  "host_permissions": [
+    "http://localhost:5002/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "options_page": "options.html",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Digital Addiction Awareness Tracker"
+  }
+}

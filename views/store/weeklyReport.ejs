@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Usage Analytics</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800">
+
+  <%- include("../partials/navbar") %>
+
+  <div class="max-w-6xl mx-auto px-4 py-8">
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-slate-900">Usage Analytics</h1>
+      <p class="text-slate-600">Your weekly screen-time patterns and category breakdown.</p>
+    </div>
+
+    <div class="grid md:grid-cols-2 xl:grid-cols-5 gap-6 mb-8">
+      <div class="bg-white rounded-2xl shadow p-6">
+        <h2 class="text-sm font-semibold text-slate-500 uppercase mb-2">Weekly Total</h2>
+        <p class="text-3xl font-bold text-blue-600"><%= typeof weeklyTotal !== 'undefined' ? weeklyTotal : 0 %> hrs</p>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow p-6">
+        <h2 class="text-sm font-semibold text-slate-500 uppercase mb-2">Average / Day</h2>
+        <p class="text-3xl font-bold text-indigo-600"><%= typeof averageDailyUsage !== 'undefined' ? averageDailyUsage : 0 %> hrs</p>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow p-6">
+        <h2 class="text-sm font-semibold text-slate-500 uppercase mb-2">Top Category</h2>
+        <p class="text-2xl font-bold text-green-600"><%= typeof topCategory !== 'undefined' ? topCategory : 'No Data' %></p>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow p-6">
+        <h2 class="text-sm font-semibold text-slate-500 uppercase mb-2">Highest Day</h2>
+        <p class="text-xl font-bold text-red-600"><%= typeof highestUsageDay !== 'undefined' ? highestUsageDay : 'N/A' %></p>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow p-6">
+        <h2 class="text-sm font-semibold text-slate-500 uppercase mb-2">Trend</h2>
+        <p class="text-xl font-bold <%= (typeof usageTrend !== 'undefined' ? usageTrend : 'Moderate') === 'Improving' ? 'text-green-600' : (typeof usageTrend !== 'undefined' ? usageTrend : 'Moderate') === 'Moderate' ? 'text-yellow-600' : 'text-red-600' %>">
+          <%= typeof usageTrend !== 'undefined' ? usageTrend : 'Moderate' %>
+        </p>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow p-6 mb-8">
+      <h2 class="text-2xl font-bold mb-4">Last 7 Days</h2>
+      <div class="h-80">
+        <canvas id="weeklyLineChart"></canvas>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow p-6 mb-8">
+      <h2 class="text-2xl font-bold mb-4">Category Breakdown</h2>
+      <div class="h-80">
+        <canvas id="weeklyPieChart"></canvas>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow p-6 mb-8">
+      <h2 class="text-2xl font-bold mb-4">Category Totals</h2>
+      <div class="grid md:grid-cols-2 gap-4">
+        <div class="border rounded-xl p-4"><strong>Social Media:</strong> <%= (categoryTotals && categoryTotals["Social Media"]) || 0 %> hrs</div>
+        <div class="border rounded-xl p-4"><strong>Entertainment:</strong> <%= (categoryTotals && categoryTotals["Entertainment"]) || 0 %> hrs</div>
+        <div class="border rounded-xl p-4"><strong>Study:</strong> <%= (categoryTotals && categoryTotals["Study"]) || 0 %> hrs</div>
+        <div class="border rounded-xl p-4"><strong>Gaming:</strong> <%= (categoryTotals && categoryTotals["Gaming"]) || 0 %> hrs</div>
+        <div class="border rounded-xl p-4 md:col-span-2"><strong>Other:</strong> <%= (categoryTotals && categoryTotals["Other"]) || 0 %> hrs</div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow p-6">
+      <h2 class="text-2xl font-bold mb-4">Recent Weekly Entries</h2>
+
+      <% if (weeklyEntries && weeklyEntries.length > 0) { %>
+        <div class="space-y-4">
+          <% weeklyEntries.forEach(entry => { %>
+            <div class="border rounded-xl p-4">
+              <p><strong>Category:</strong> <%= entry.category %></p>
+              <p><strong>Hours:</strong> <%= entry.hours %></p>
+              <p><strong>Notes:</strong> <%= entry.notes || "No notes" %></p>
+              <p><strong>Date:</strong> <%= new Date(entry.date).toLocaleDateString() %></p>
+            </div>
+          <% }) %>
+        </div>
+      <% } else { %>
+        <p class="text-slate-500">No entries found for this week.</p>
+      <% } %>
+    </div>
+  </div>
+
+  <%- include("../partials/footer") %>
+
+  <script id="weekly-line-labels" type="application/json"><%- JSON.stringify(dailyLabels || []) %></script>
+  <script id="weekly-line-data" type="application/json"><%- JSON.stringify(dailyData || []) %></script>
+  <script id="weekly-pie-labels" type="application/json"><%- JSON.stringify(Object.keys(categoryTotals || {})) %></script>
+  <script id="weekly-pie-data" type="application/json"><%- JSON.stringify(Object.values(categoryTotals || {})) %></script>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+
+    socket.on("screenTimeUpdated", function () {
+      window.location.reload();
+    });
+
+    const lineLabels = JSON.parse(document.getElementById("weekly-line-labels").textContent);
+    const lineData = JSON.parse(document.getElementById("weekly-line-data").textContent);
+    const pieLabels = JSON.parse(document.getElementById("weekly-pie-labels").textContent);
+    const pieData = JSON.parse(document.getElementById("weekly-pie-data").textContent);
+
+    const lineCtx = document.getElementById("weeklyLineChart");
+    const pieCtx = document.getElementById("weeklyPieChart");
+
+    if (lineCtx) {
+      new Chart(lineCtx, {
+        type: "line",
+        data: {
+          labels: lineLabels,
+          datasets: [
+            {
+              label: "Hours",
+              data: lineData,
+              tension: 0.3,
+              borderWidth: 2
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false
+        }
+      });
+    }
+
+    if (pieCtx) {
+      new Chart(pieCtx, {
+        type: "pie",
+        data: {
+          labels: pieLabels,
+          datasets: [
+            {
+              data: pieData,
+              borderWidth: 1
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false
+        }
+      });
+    }
+  </script>
+</body>
+</html>

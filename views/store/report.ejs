@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weekly Report</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800">
+
+  <%- include("../partials/navbar") %>
+
+  <div class="max-w-7xl mx-auto px-4 py-8">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+      <div>
+        <h1 class="text-3xl font-bold text-slate-900">Weekly Report</h1>
+        <p class="text-slate-600">Track your last 7 days of digital activity and export it as CSV.</p>
+      </div>
+
+      <a
+        href="/reports/export-csv"
+        class="inline-flex items-center justify-center px-5 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
+      >
+        Download CSV
+      </a>
+    </div>
+
+    <div class="grid md:grid-cols-2 xl:grid-cols-5 gap-4 mb-8">
+      <div class="bg-white p-5 rounded-2xl shadow border border-slate-200">
+        <p class="text-sm text-slate-500">Weekly Total</p>
+        <p class="text-2xl font-bold text-indigo-700"><%= weeklyTotal %> hrs</p>
+      </div>
+
+      <div class="bg-white p-5 rounded-2xl shadow border border-slate-200">
+        <p class="text-sm text-slate-500">Daily Average</p>
+        <p class="text-2xl font-bold text-green-700"><%= weeklyAverage %> hrs</p>
+      </div>
+
+      <div class="bg-white p-5 rounded-2xl shadow border border-slate-200">
+        <p class="text-sm text-slate-500">Productivity Score</p>
+        <p class="text-2xl font-bold text-blue-700"><%= productivityScore %>/100</p>
+      </div>
+
+      <div class="bg-white p-5 rounded-2xl shadow border border-slate-200">
+        <p class="text-sm text-slate-500">Productivity Level</p>
+        <p class="text-2xl font-bold text-slate-900"><%= productivityLabel %></p>
+      </div>
+
+      <div class="bg-white p-5 rounded-2xl shadow border border-slate-200">
+        <p class="text-sm text-slate-500">Top Category</p>
+        <p class="text-2xl font-bold text-red-600"><%= topCategory %></p>
+      </div>
+    </div>
+
+    <div class="grid xl:grid-cols-2 gap-8 mb-8">
+      <div class="bg-white rounded-2xl shadow border border-slate-200 p-6">
+        <h2 class="text-2xl font-bold mb-4">Last 7 Days Usage</h2>
+        <canvas id="weeklyReportChart"></canvas>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow border border-slate-200 p-6">
+        <h2 class="text-2xl font-bold mb-4">Weekly Category Summary</h2>
+        <div class="space-y-4">
+          <div class="border rounded-xl p-4 flex items-center justify-between">
+            <span>Social Media</span>
+            <strong><%= Number(weeklyCategoryTotals["Social Media"] || 0).toFixed(4) %> hrs</strong>
+          </div>
+          <div class="border rounded-xl p-4 flex items-center justify-between">
+            <span>Entertainment</span>
+            <strong><%= Number(weeklyCategoryTotals["Entertainment"] || 0).toFixed(4) %> hrs</strong>
+          </div>
+          <div class="border rounded-xl p-4 flex items-center justify-between">
+            <span>Study</span>
+            <strong><%= Number(weeklyCategoryTotals["Study"] || 0).toFixed(4) %> hrs</strong>
+          </div>
+          <div class="border rounded-xl p-4 flex items-center justify-between">
+            <span>Gaming</span>
+            <strong><%= Number(weeklyCategoryTotals["Gaming"] || 0).toFixed(4) %> hrs</strong>
+          </div>
+          <div class="border rounded-xl p-4 flex items-center justify-between">
+            <span>Other</span>
+            <strong><%= Number(weeklyCategoryTotals["Other"] || 0).toFixed(4) %> hrs</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid xl:grid-cols-2 gap-8 mb-8">
+      <div class="bg-white rounded-2xl shadow border border-slate-200 p-6">
+        <h2 class="text-2xl font-bold mb-4">Monthly Summary</h2>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="bg-slate-50 border rounded-xl p-4">
+            <p class="text-sm text-slate-500">Monthly Total</p>
+            <p class="text-2xl font-bold"><%= monthlyTotal %> hrs</p>
+          </div>
+          <div class="bg-slate-50 border rounded-xl p-4">
+            <p class="text-sm text-slate-500">Study</p>
+            <p class="text-2xl font-bold"><%= Number(monthlyCategoryTotals["Study"] || 0).toFixed(4) %> hrs</p>
+          </div>
+          <div class="bg-slate-50 border rounded-xl p-4">
+            <p class="text-sm text-slate-500">Social Media</p>
+            <p class="text-2xl font-bold"><%= Number(monthlyCategoryTotals["Social Media"] || 0).toFixed(4) %> hrs</p>
+          </div>
+          <div class="bg-slate-50 border rounded-xl p-4">
+            <p class="text-sm text-slate-500">Entertainment</p>
+            <p class="text-2xl font-bold"><%= Number(monthlyCategoryTotals["Entertainment"] || 0).toFixed(4) %> hrs</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow border border-slate-200 p-6">
+        <h2 class="text-2xl font-bold mb-4">Top Websites This Week</h2>
+        <% if (topWebsites && topWebsites.length > 0) { %>
+          <div class="space-y-4">
+            <% topWebsites.forEach((site, index) => { %>
+              <div class="border rounded-xl p-4">
+                <div class="flex items-center justify-between mb-2">
+                  <p class="font-bold">#<%= index + 1 %> <%= site.domain %></p>
+                  <span class="text-sm px-3 py-1 rounded-full bg-slate-100"><%= site.category %></span>
+                </div>
+                <p class="text-sm text-slate-600"><strong>Total Hours:</strong> <%= site.totalHours %></p>
+                <p class="text-sm text-slate-600"><strong>Visits:</strong> <%= site.visits %></p>
+                <p class="text-sm text-slate-600"><strong>Last Title:</strong> <%= site.lastTitle %></p>
+              </div>
+            <% }) %>
+          </div>
+        <% } else { %>
+          <p class="text-slate-500">No website activity found for this week.</p>
+        <% } %>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow border border-slate-200 p-6 mb-8">
+      <h2 class="text-2xl font-bold mb-4">Daily Breakdown</h2>
+
+      <% if (weeklyRows && weeklyRows.length > 0) { %>
+        <div class="overflow-x-auto">
+          <table class="w-full border-collapse">
+            <thead>
+              <tr class="bg-slate-100 text-left">
+                <th class="p-3 border">Day</th>
+                <th class="p-3 border">Total Hours</th>
+                <th class="p-3 border">Sessions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% weeklyRows.forEach(row => { %>
+                <tr>
+                  <td class="p-3 border"><%= row.label %></td>
+                  <td class="p-3 border"><%= row.total %></td>
+                  <td class="p-3 border"><%= row.sessions %></td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } else { %>
+        <p class="text-slate-500">No weekly records available.</p>
+      <% } %>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow border border-slate-200 p-6">
+      <h2 class="text-2xl font-bold mb-4">Recent Weekly Activity</h2>
+
+      <% if (recentEntries && recentEntries.length > 0) { %>
+        <div class="space-y-4">
+          <% recentEntries.forEach(entry => { %>
+            <div class="border rounded-xl p-4">
+              <p><strong>Category:</strong> <%= entry.category %></p>
+              <p><strong>Hours:</strong> <%= Number(entry.hours || 0).toFixed(4) %></p>
+              <p><strong>Source:</strong> <%= entry.source || "manual" %></p>
+              <p><strong>Domain:</strong> <%= entry.domain || "N/A" %></p>
+              <p><strong>Title:</strong> <%= entry.title || "N/A" %></p>
+              <p><strong>URL:</strong> <%= entry.url || "N/A" %></p>
+              <p><strong>Time:</strong> <%= new Date(entry.createdAt).toLocaleString() %></p>
+            </div>
+          <% }) %>
+        </div>
+      <% } else { %>
+        <p class="text-slate-500">No recent activity available.</p>
+      <% } %>
+    </div>
+  </div>
+
+  <%- include("../partials/footer") %>
+
+  <script>
+    const weeklyLabels = <%- weeklyChartLabels %>;
+    const weeklyData = <%- weeklyChartData %>;
+
+    const reportCtx = document.getElementById("weeklyReportChart").getContext("2d");
+
+    new Chart(reportCtx, {
+      type: "line",
+      data: {
+        labels: weeklyLabels,
+        datasets: [
+          {
+            label: "Hours",
+            data: weeklyData,
+            tension: 0.35,
+            fill: false,
+            borderWidth: 2
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>

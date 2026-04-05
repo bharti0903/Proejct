@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Today Usage</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      width: 340px;
+      margin: 0;
+      padding: 16px;
+      background: #f8fafc;
+      color: #0f172a;
+      box-sizing: border-box;
+    }
+
+    .card {
+      background: white;
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 12px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+    }
+
+    .title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .label {
+      font-size: 12px;
+      color: #64748b;
+    }
+
+    .value {
+      font-size: 22px;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .status {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      background: #e2e8f0;
+    }
+
+    .focus-active {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .focus-inactive {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .small {
+      font-size: 13px;
+      color: #475569;
+      margin-top: 6px;
+    }
+
+    .error {
+      color: #b91c1c;
+      font-size: 13px;
+      margin-top: 10px;
+    }
+
+    .refresh-btn {
+      width: 100%;
+      border: none;
+      background: #2563eb;
+      color: white;
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="title">Today’s Usage</div>
+    <div class="row">
+      <div>
+        <div class="label">Total Time</div>
+        <div id="todayTotal" class="value">--</div>
+      </div>
+      <div>
+        <div class="label">Sessions</div>
+        <div id="sessionCount" class="value">--</div>
+      </div>
+    </div>
+    <div class="small">Top Category: <strong id="topCategory">--</strong></div>
+    <div class="small">Usage Status: <strong id="usageStatus">--</strong></div>
+  </div>
+
+  <div class="card">
+    <div class="title">Focus Mode</div>
+    <div id="focusStatus" class="status focus-inactive">Inactive</div>
+    <div class="small">Remaining: <strong id="focusRemaining">--</strong></div>
+    <div class="small">Blocked Sites: <strong id="blockedCount">0</strong></div>
+  </div>
+
+  <button id="refreshBtn" class="refresh-btn" type="button">Refresh</button>
+  <div id="errorMsg" class="error"></div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
