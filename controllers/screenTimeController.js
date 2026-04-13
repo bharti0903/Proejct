@@ -18,28 +18,52 @@ const safeEmit = (room, event, payload) => {
   }
 };
 
+const getTodayStats = async (userId) => {
+  const user = await User.findById(userId);
+  if (!user) return null;
+
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+
+  const endOfToday = new Date(startOfToday);
+  endOfToday.setDate(endOfToday.getDate() + 1);
+
+  const todayEntries = await ScreenTime.find({
+    user: userId,
+    date: { $gte: startOfToday, $lt: endOfToday },
+  }).sort({ createdAt: -1 });
+
+  const todayTotal = todayEntries.reduce((sum, entry) => sum + entry.hours, 0);
+  const sessionCount = todayEntries.length;
+  const timeLeft = Math.max(user.dailyLimit - todayTotal, 0);
+
+  let usageStatus = "Healthy";
+  if (todayTotal >= user.warningLimit && todayTotal < user.dangerLimit) {
+    usageStatus = "Approaching Limit";
+  } else if (todayTotal >= user.dangerLimit) {
+    usageStatus = "Limit Reached";
+  }
+
+  return {
+    user,
+    todayEntries,
+    todayTotal,
+    sessionCount,
+    timeLeft,
+    usageStatus,
+  };
+};
+
 const getTrackPage = async (req, res) => {
   try {
-    const user = await User.findById(req.session.userId);
+    const stats = await getTodayStats(req.session.userId);
+    if (!stats) {
+      return res.redirect("/login");
+    }
 
     const entries = await ScreenTime.find({ user: req.session.userId }).sort({
       createdAt: -1,
     });
-
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
-
-    const endOfToday = new Date(startOfToday);
-    endOfToday.setDate(endOfToday.getDate() + 1);
-
-    const todayEntries = await ScreenTime.find({
-      user: req.session.userId,
-      date: { $gte: startOfToday, $lt: endOfToday },
-    }).sort({ createdAt: -1 });
-
-    const todayTotal = todayEntries.reduce((sum, entry) => sum + entry.hours, 0);
-    const sessionCount = todayEntries.length;
-    const timeLeft = Math.max(user.dailyLimit - todayTotal, 0);
 
     const todayCategoryTotals = {
       "Social Media": 0,
@@ -49,7 +73,7 @@ const getTrackPage = async (req, res) => {
       Other: 0,
     };
 
-    todayEntries.forEach((entry) => {
+    stats.todayEntries.forEach((entry) => {
       if (todayCategoryTotals[entry.category] !== undefined) {
         todayCategoryTotals[entry.category] += entry.hours;
       }
@@ -65,33 +89,28 @@ const getTrackPage = async (req, res) => {
       }
     });
 
-    let usageStatus = "Healthy";
-    if (todayTotal >= user.warningLimit && todayTotal < user.dangerLimit) {
-      usageStatus = "Approaching Limit";
-    } else if (todayTotal >= user.dangerLimit) {
-      usageStatus = "Limit Reached";
-    }
-
     const progressPercent =
-      user.dailyLimit > 0 ? Math.min((todayTotal / user.dailyLimit) * 100, 100) : 0;
+      stats.user.dailyLimit > 0
+        ? Math.min((stats.todayTotal / stats.user.dailyLimit) * 100, 100)
+        : 0;
 
     res.render("store/trackScreenTime", {
       entries,
-      todayEntries,
+      todayEntries: stats.todayEntries,
       editEntry: null,
       error: null,
       success: null,
       userName: req.session.userName || null,
       userId: req.session.userId,
-      todayTotal: Number(todayTotal.toFixed(4)),
-      sessionCount,
-      timeLeft: Number(timeLeft.toFixed(4)),
+      todayTotal: Number(stats.todayTotal.toFixed(4)),
+      sessionCount: stats.sessionCount,
+      timeLeft: Number(stats.timeLeft.toFixed(4)),
       mostUsedCategory,
-      usageStatus,
+      usageStatus: stats.usageStatus,
       progressPercent: Number(progressPercent.toFixed(1)),
-      warningLimit: user.warningLimit,
-      dangerLimit: user.dangerLimit,
-      dailyLimit: user.dailyLimit,
+      warningLimit: stats.user.warningLimit,
+      dangerLimit: stats.user.dangerLimit,
+      dailyLimit: stats.user.dailyLimit,
     });
   } catch (error) {
     console.error(error);
@@ -118,17 +137,41 @@ const getTrackPage = async (req, res) => {
 
 const handleDailyLimitAlert = async (userId) => {
   const user = await User.findById(userId);
-  if (!user) return;
+  if (!user) {
+    return {
+      warningTriggered: false,
+      dangerTriggered: false,
+      todayTotal: 0,
+      sessionCount: 0,
+      timeLeft: 0,
+      usageStatus: "Healthy",
+    };
+  }
 
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
 
+  const endOfToday = new Date(startOfToday);
+  endOfToday.setDate(endOfToday.getDate() + 1);
+
   const todayEntries = await ScreenTime.find({
     user: userId,
-    date: { $gte: startOfToday },
+    date: { $gte: startOfToday, $lt: endOfToday },
   });
 
   const todayTotal = todayEntries.reduce((sum, entry) => sum + entry.hours, 0);
+  const sessionCount = todayEntries.length;
+  const timeLeft = Math.max(user.dailyLimit - todayTotal, 0);
+
+  let usageStatus = "Healthy";
+  if (todayTotal >= user.warningLimit && todayTotal < user.dangerLimit) {
+    usageStatus = "Approaching Limit";
+  } else if (todayTotal >= user.dangerLimit) {
+    usageStatus = "Limit Reached";
+  }
+
+  let warningTriggered = false;
+  let dangerTriggered = false;
 
   if (todayTotal >= user.warningLimit && todayTotal < user.dangerLimit) {
     const message = `You reached your warning threshold of ${formatThreshold(
@@ -154,6 +197,8 @@ const handleDailyLimitAlert = async (userId) => {
         type: newAlert.type,
         message: newAlert.message,
       });
+
+      warningTriggered = true;
     }
   }
 
@@ -181,8 +226,19 @@ const handleDailyLimitAlert = async (userId) => {
         type: newAlert.type,
         message: newAlert.message,
       });
+
+      dangerTriggered = true;
     }
   }
+
+  return {
+    warningTriggered,
+    dangerTriggered,
+    todayTotal,
+    sessionCount,
+    timeLeft,
+    usageStatus,
+  };
 };
 
 const addScreenTime = async (req, res) => {
@@ -236,17 +292,26 @@ const saveTrackedSession = async (req, res) => {
       source: "live-session",
     });
 
-    await handleDailyLimitAlert(req.session.userId);
+    const alertState = await handleDailyLimitAlert(req.session.userId);
 
     safeEmit(`user_${req.session.userId}`, "screenTimeUpdated", {
       userId: req.session.userId,
       message: "Screen time updated",
+      entry,
     });
 
     return res.status(201).json({
       success: true,
       message: "Session saved successfully",
       entry,
+      alert: {
+        warningTriggered: alertState.warningTriggered,
+        dangerTriggered: alertState.dangerTriggered,
+        todayTotal: Number(alertState.todayTotal.toFixed(4)),
+        sessionCount: alertState.sessionCount,
+        timeLeft: Number(alertState.timeLeft.toFixed(4)),
+        usageStatus: alertState.usageStatus,
+      },
     });
   } catch (error) {
     console.error(error);
@@ -273,44 +338,26 @@ const getEditScreenTimePage = async (req, res) => {
       return res.redirect("/track-screen-time");
     }
 
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
-
-    const endOfToday = new Date(startOfToday);
-    endOfToday.setDate(endOfToday.getDate() + 1);
-
-    const todayEntries = await ScreenTime.find({
-      user: req.session.userId,
-      date: { $gte: startOfToday, $lt: endOfToday },
-    }).sort({ createdAt: -1 });
-
-    const todayTotal = todayEntries.reduce((sum, entry) => sum + entry.hours, 0);
-    const sessionCount = todayEntries.length;
-    const timeLeft = Math.max(user.dailyLimit - todayTotal, 0);
-
-    let usageStatus = "Healthy";
-    if (todayTotal >= user.warningLimit && todayTotal < user.dangerLimit) {
-      usageStatus = "Approaching Limit";
-    } else if (todayTotal >= user.dangerLimit) {
-      usageStatus = "Limit Reached";
-    }
+    const stats = await getTodayStats(req.session.userId);
 
     const progressPercent =
-      user.dailyLimit > 0 ? Math.min((todayTotal / user.dailyLimit) * 100, 100) : 0;
+      user.dailyLimit > 0
+        ? Math.min((stats.todayTotal / user.dailyLimit) * 100, 100)
+        : 0;
 
     res.render("store/trackScreenTime", {
       entries,
-      todayEntries,
+      todayEntries: stats.todayEntries,
       editEntry,
       error: null,
       success: null,
       userName: req.session.userName || null,
       userId: req.session.userId,
-      todayTotal: Number(todayTotal.toFixed(4)),
-      sessionCount,
-      timeLeft: Number(timeLeft.toFixed(4)),
+      todayTotal: Number(stats.todayTotal.toFixed(4)),
+      sessionCount: stats.sessionCount,
+      timeLeft: Number(stats.timeLeft.toFixed(4)),
       mostUsedCategory: "No data",
-      usageStatus,
+      usageStatus: stats.usageStatus,
       progressPercent: Number(progressPercent.toFixed(1)),
       warningLimit: user.warningLimit,
       dangerLimit: user.dangerLimit,

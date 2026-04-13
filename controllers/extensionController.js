@@ -2,6 +2,7 @@ const ScreenTime = require("../models/ScreenTime");
 const User = require("../models/User");
 const Alert = require("../models/Alert");
 const FocusSession = require("../models/FocusSession");
+const TrackingRule = require("../models/TrackingRule");
 const { getIO } = require("../sockets");
 
 const formatThreshold = (value) => {
@@ -19,7 +20,7 @@ const safeEmit = (room, event, payload) => {
   }
 };
 
-const categorize = (domain = "", title = "") => {
+const defaultCategorize = (domain = "", title = "") => {
   const d = String(domain).toLowerCase();
   const t = String(title).toLowerCase();
 
@@ -30,10 +31,28 @@ const categorize = (domain = "", title = "") => {
   return "Other";
 };
 
-const getUserByToken = async (req) => {
-  const token = req.headers["x-extension-token"];
-  if (!token) return null;
-  return User.findOne({ extensionToken: token });
+const applyCustomRule = async (userId, domain, title, url) => {
+  const rules = await TrackingRule.find({
+    user: userId,
+    enabled: true,
+  });
+
+  const d = String(domain || "").toLowerCase();
+  const t = String(title || "").toLowerCase();
+  const u = String(url || "").toLowerCase();
+
+  for (const rule of rules) {
+    const pattern = String(rule.pattern || "").toLowerCase();
+
+    if (rule.matchType === "domain" && d === pattern) return rule.category;
+    if (rule.matchType === "url" && u === pattern) return rule.category;
+    if (rule.matchType === "title" && t.includes(pattern)) return rule.category;
+    if (rule.matchType === "contains" && (d.includes(pattern) || u.includes(pattern) || t.includes(pattern))) {
+      return rule.category;
+    }
+  }
+
+  return null;
 };
 
 const createThresholdAlerts = async (userId) => {
@@ -64,7 +83,11 @@ const createThresholdAlerts = async (userId) => {
 
     if (!existingWarning) {
       const newAlert = await Alert.create({ user: userId, message, type: "warning" });
-      safeEmit(`user_${userId}`, "newAlert", { id: newAlert._id, type: newAlert.type, message: newAlert.message });
+      safeEmit(`user_${userId}`, "newAlert", {
+        id: newAlert._id,
+        type: newAlert.type,
+        message: newAlert.message,
+      });
       warningTriggered = true;
     }
   }
@@ -81,12 +104,58 @@ const createThresholdAlerts = async (userId) => {
 
     if (!existingDanger) {
       const newAlert = await Alert.create({ user: userId, message, type: "danger" });
-      safeEmit(`user_${userId}`, "newAlert", { id: newAlert._id, type: newAlert.type, message: newAlert.message });
+      safeEmit(`user_${userId}`, "newAlert", {
+        id: newAlert._id,
+        type: newAlert.type,
+        message: newAlert.message,
+      });
       dangerTriggered = true;
     }
   }
 
   return { warningTriggered, dangerTriggered, todayTotal };
+};
+
+const getUserByToken = async (req) => {
+  const token = req.headers["x-extension-token"];
+  if (!token) return null;
+  return User.findOne({ extensionToken: token });
+};
+
+const getExtensionBootstrap = async (req, res) => {
+  try {
+    if (!req.session.userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Login required",
+      });
+    }
+
+    const user = await User.findById(req.session.userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    return res.json({
+      success: true,
+      backendUrl: `http://localhost:${process.env.PORT || 5002}`,
+      extensionToken: user.extensionToken,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+      },
+    });
+  } catch (error) {
+    console.error("BOOTSTRAP ERROR:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to bootstrap extension",
+    });
+  }
 };
 
 const saveExtensionData = async (req, res) => {
@@ -95,14 +164,26 @@ const saveExtensionData = async (req, res) => {
     const { minutes, domain, title, url } = req.body;
 
     if (!user) {
-      return res.status(401).json({ success: false, message: "Invalid or missing extension token" });
+      return res.status(401).json({
+        success: false,
+        message: "Invalid or missing extension token",
+      });
     }
 
     const hours = Number(minutes) / 60;
     const cleanedDomain = String(domain || "").trim();
     const cleanedTitle = String(title || "").trim();
     const cleanedUrl = String(url || "").trim();
-    const category = categorize(cleanedDomain, cleanedTitle);
+
+    const customCategory = await applyCustomRule(
+      user._id,
+      cleanedDomain,
+      cleanedTitle,
+      cleanedUrl
+    );
+
+    const category =
+      customCategory || defaultCategorize(cleanedDomain, cleanedTitle);
 
     const entry = await ScreenTime.create({
       user: user._id,
@@ -136,7 +217,10 @@ const saveExtensionData = async (req, res) => {
     });
   } catch (error) {
     console.error("EXTENSION TRACK ERROR:", error);
-    return res.status(500).json({ success: false, message: "Failed to save extension tracking data" });
+    return res.status(500).json({
+      success: false,
+      message: "Failed to save extension tracking data",
+    });
   }
 };
 
@@ -144,7 +228,10 @@ const getExtensionTodaySummary = async (req, res) => {
   try {
     const user = await getUserByToken(req);
     if (!user) {
-      return res.status(401).json({ success: false, message: "Invalid or missing extension token" });
+      return res.status(401).json({
+        success: false,
+        message: "Invalid or missing extension token",
+      });
     }
 
     const startOfToday = new Date();
@@ -157,14 +244,25 @@ const getExtensionTodaySummary = async (req, res) => {
 
     const todayTotal = todayEntries.reduce((sum, entry) => sum + entry.hours, 0);
 
-    const categoryTotals = { "Social Media": 0, Entertainment: 0, Study: 0, Gaming: 0, Other: 0 };
+    const categoryTotals = {
+      "Social Media": 0,
+      Entertainment: 0,
+      Study: 0,
+      Gaming: 0,
+      Other: 0,
+    };
+
     todayEntries.forEach((entry) => {
-      if (categoryTotals[entry.category] !== undefined) categoryTotals[entry.category] += entry.hours;
-      else categoryTotals.Other += entry.hours;
+      if (categoryTotals[entry.category] !== undefined) {
+        categoryTotals[entry.category] += entry.hours;
+      } else {
+        categoryTotals.Other += entry.hours;
+      }
     });
 
     let topCategory = "No data";
     let maxHours = 0;
+
     Object.entries(categoryTotals).forEach(([category, hours]) => {
       if (hours > maxHours) {
         maxHours = hours;
@@ -173,8 +271,11 @@ const getExtensionTodaySummary = async (req, res) => {
     });
 
     let usageStatus = "Healthy";
-    if (todayTotal >= user.warningLimit && todayTotal < user.dangerLimit) usageStatus = "Approaching Limit";
-    else if (todayTotal >= user.dangerLimit) usageStatus = "Limit Reached";
+    if (todayTotal >= user.warningLimit && todayTotal < user.dangerLimit) {
+      usageStatus = "Approaching Limit";
+    } else if (todayTotal >= user.dangerLimit) {
+      usageStatus = "Limit Reached";
+    }
 
     const activeFocusSession = await FocusSession.findOne({
       user: user._id,
@@ -199,7 +300,10 @@ const getExtensionTodaySummary = async (req, res) => {
             active: true,
             endTime: activeFocusSession.endTime,
             blockedSites: activeFocusSession.blockedSites || [],
-            remainingMs: Math.max(new Date(activeFocusSession.endTime).getTime() - Date.now(), 0),
+            remainingMs: Math.max(
+              new Date(activeFocusSession.endTime).getTime() - Date.now(),
+              0
+            ),
           }
         : {
             active: false,
@@ -210,11 +314,15 @@ const getExtensionTodaySummary = async (req, res) => {
     });
   } catch (error) {
     console.error("EXTENSION SUMMARY ERROR:", error);
-    return res.status(500).json({ success: false, message: "Failed to fetch extension summary" });
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch extension summary",
+    });
   }
 };
 
 module.exports = {
+  getExtensionBootstrap,
   saveExtensionData,
   getExtensionTodaySummary,
 };

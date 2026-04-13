@@ -7,208 +7,179 @@
   <link rel="stylesheet" href="/Output.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body class="bg-slate-50 min-h-screen text-slate-800">
   <%- include("../partials/navbar") %>
 
+  <% 
+    function formatDuration(hours) {
+      const totalMinutes = Math.round((Number(hours) || 0) * 60);
+      const hrs = Math.floor(totalMinutes / 60);
+      const mins = totalMinutes % 60;
+
+      if (hrs === 0) return `${mins} min`;
+      if (mins === 0) return `${hrs} hr`;
+      return `${hrs} hr ${mins} min`;
+    }
+  %>
+
   <div class="max-w-7xl mx-auto px-4 py-8">
+
     <div class="mb-8">
       <h1 class="text-3xl font-bold text-slate-900">Dashboard</h1>
       <p class="text-slate-600">
-        Welcome, <%= userName || "User" %>. Here is your screen-time analytics overview.
+        Welcome, <%= userName || "User" %>.
       </p>
     </div>
 
     <% if (error) { %>
-      <div class="mb-4 p-4 rounded-lg bg-red-100 text-red-700 border border-red-200">
+      <div class="mb-4 p-4 bg-red-100 text-red-700 rounded-lg">
         <%= error %>
       </div>
     <% } %>
 
+    <!-- CARDS -->
     <div class="grid md:grid-cols-2 xl:grid-cols-5 gap-4 mb-8">
-      <div class="bg-white p-5 rounded-2xl shadow border border-slate-200">
-        <p class="text-sm text-slate-500">Today’s Usage</p>
-        <p class="text-2xl font-bold text-indigo-700"><%= todayTotal %> hrs</p>
+
+      <div class="bg-white p-5 rounded-2xl shadow">
+        <p class="text-sm text-slate-500">Today</p>
+        <p class="text-2xl font-bold text-indigo-700">
+          <%= formatDuration(todayTotal) %>
+        </p>
       </div>
 
-      <div class="bg-white p-5 rounded-2xl shadow border border-slate-200">
+      <div class="bg-white p-5 rounded-2xl shadow">
         <p class="text-sm text-slate-500">Time Left</p>
-        <p class="text-2xl font-bold text-green-700"><%= timeLeft %> hrs</p>
+        <p class="text-2xl font-bold text-green-700">
+          <%= formatDuration(timeLeft) %>
+        </p>
       </div>
 
-      <div class="bg-white p-5 rounded-2xl shadow border border-slate-200">
-        <p class="text-sm text-slate-500">Today’s Sessions</p>
-        <p class="text-2xl font-bold text-blue-700"><%= todaySessionCount %></p>
+      <div class="bg-white p-5 rounded-2xl shadow">
+        <p class="text-sm text-slate-500">Sessions</p>
+        <p class="text-2xl font-bold text-blue-700">
+          <%= todaySessionCount %>
+        </p>
       </div>
 
-      <div class="bg-white p-5 rounded-2xl shadow border border-slate-200">
-        <p class="text-sm text-slate-500">Most Used Category</p>
-        <p class="text-2xl font-bold text-slate-900"><%= mostUsedCategory %></p>
-        <p class="text-sm text-slate-500 mt-1"><%= mostUsedCategoryHours %> hrs</p>
+      <div class="bg-white p-5 rounded-2xl shadow">
+        <p class="text-sm text-slate-500">Top Category</p>
+        <p class="text-xl font-bold"><%= mostUsedCategory %></p>
+        <p class="text-sm text-slate-500">
+          <%= formatDuration(mostUsedCategoryHours) %>
+        </p>
       </div>
 
-      <div class="bg-white p-5 rounded-2xl shadow border border-slate-200">
-        <p class="text-sm text-slate-500">Usage Status</p>
-        <p class="text-2xl font-bold text-red-600"><%= usageStatus %></p>
+      <div class="bg-white p-5 rounded-2xl shadow">
+        <p class="text-sm text-slate-500">Status</p>
+        <p class="text-xl font-bold text-red-600"><%= usageStatus %></p>
+      </div>
+
+    </div>
+
+    <!-- LIMITS -->
+    <div class="bg-white p-6 rounded-2xl shadow mb-8">
+
+      <div class="flex justify-between mb-2">
+        <h2 class="text-xl font-bold">Daily Limit</h2>
+        <span><%= progressPercent %>% used</span>
+      </div>
+
+      <div class="w-full h-3 bg-gray-200 rounded-full">
+        <div class="bg-indigo-600 h-3 rounded-full"
+             style="width:<%= progressPercent %>%"></div>
+      </div>
+
+      <div class="grid grid-cols-3 gap-4 mt-4">
+
+        <div class="p-4 bg-yellow-50 rounded-xl">
+          <p class="text-yellow-700 font-semibold">Warning</p>
+          <p><%= formatDuration(warningLimit) %></p>
+        </div>
+
+        <div class="p-4 bg-red-50 rounded-xl">
+          <p class="text-red-700 font-semibold">Danger</p>
+          <p><%= formatDuration(dangerLimit) %></p>
+        </div>
+
+        <div class="p-4 bg-blue-50 rounded-xl">
+          <p class="text-blue-700 font-semibold">Daily</p>
+          <p><%= formatDuration(dailyLimit) %></p>
+        </div>
+
       </div>
     </div>
 
-    <div class="bg-white rounded-2xl shadow border border-slate-200 p-6 mb-8">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="text-2xl font-bold">Daily Limit Progress</h2>
-        <span class="text-sm text-slate-500"><%= progressPercent %>% used</span>
-      </div>
-
-      <div class="w-full h-4 bg-slate-200 rounded-full overflow-hidden">
-        <div class="h-full bg-indigo-600 rounded-full" style="width: <%= progressPercent %>%"></div>
-      </div>
-
-      <div class="grid md:grid-cols-3 gap-4 mt-4 text-sm text-slate-600">
-        <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
-          <p class="font-semibold text-yellow-700">Warning Limit</p>
-          <p><%= warningLimit %> hrs</p>
-        </div>
-        <div class="bg-red-50 border border-red-200 rounded-xl p-4">
-          <p class="font-semibold text-red-700">Danger Limit</p>
-          <p><%= dangerLimit %> hrs</p>
-        </div>
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
-          <p class="font-semibold text-blue-700">Daily Limit</p>
-          <p><%= dailyLimit %> hrs</p>
-        </div>
-      </div>
-    </div>
-
+    <!-- WEEKLY -->
     <div class="grid xl:grid-cols-2 gap-8 mb-8">
-      <div class="bg-white rounded-2xl shadow border border-slate-200 p-6">
-        <h2 class="text-2xl font-bold mb-4">Today’s Category Usage</h2>
-        <canvas id="categoryChart"></canvas>
-      </div>
 
-      <div class="bg-white rounded-2xl shadow border border-slate-200 p-6">
-        <h2 class="text-2xl font-bold mb-4">Last 7 Days Usage</h2>
-        <canvas id="weeklyChart"></canvas>
-      </div>
-    </div>
+      <div class="bg-white p-6 rounded-2xl shadow">
+        <h2 class="text-xl font-bold mb-4">Weekly Summary</h2>
 
-    <div class="grid xl:grid-cols-2 gap-8 mb-8">
-      <div class="bg-white rounded-2xl shadow border border-slate-200 p-6">
-        <h2 class="text-2xl font-bold mb-4">Weekly Summary</h2>
-
-        <div class="grid grid-cols-2 gap-4 mb-6">
-          <div class="bg-slate-50 border rounded-xl p-4">
-            <p class="text-sm text-slate-500">Weekly Total</p>
-            <p class="text-2xl font-bold"><%= weeklyTotal %> hrs</p>
+        <div class="grid grid-cols-2 gap-4 mb-4">
+          <div class="p-4 bg-gray-50 rounded-xl">
+            <p>Total</p>
+            <p class="font-bold"><%= formatDuration(weeklyTotal) %></p>
           </div>
-          <div class="bg-slate-50 border rounded-xl p-4">
-            <p class="text-sm text-slate-500">Daily Average</p>
-            <p class="text-2xl font-bold"><%= weeklyAverage %> hrs</p>
+
+          <div class="p-4 bg-gray-50 rounded-xl">
+            <p>Average</p>
+            <p class="font-bold"><%= formatDuration(weeklyAverage) %></p>
           </div>
         </div>
 
-        <% if (weeklyBreakdown && weeklyBreakdown.length > 0) { %>
-          <div class="space-y-3">
-            <% weeklyBreakdown.forEach(day => { %>
-              <div class="flex items-center justify-between border rounded-xl p-3">
-                <span class="font-medium"><%= day.label %></span>
-                <span class="text-slate-600"><%= day.total %> hrs</span>
-              </div>
-            <% }) %>
+        <% weeklyBreakdown.forEach(day => { %>
+          <div class="flex justify-between border p-3 rounded-lg mb-2">
+            <span><%= day.label %></span>
+            <span><%= formatDuration(day.total) %></span>
           </div>
-        <% } else { %>
-          <p class="text-slate-500">No weekly data available.</p>
-        <% } %>
+        <% }) %>
+
       </div>
 
-      <div class="bg-white rounded-2xl shadow border border-slate-200 p-6">
-        <h2 class="text-2xl font-bold mb-4">Top Websites</h2>
+      <!-- TOP WEBSITES -->
+      <div class="bg-white p-6 rounded-2xl shadow">
+        <h2 class="text-xl font-bold mb-4">Top Websites</h2>
 
-        <% if (topWebsites && topWebsites.length > 0) { %>
-          <div class="space-y-4">
-            <% topWebsites.forEach((site, index) => { %>
-              <div class="border rounded-xl p-4">
-                <div class="flex items-center justify-between mb-2">
-                  <p class="font-bold">#<%= index + 1 %> <%= site.domain %></p>
-                  <span class="text-sm px-3 py-1 rounded-full bg-slate-100"><%= site.category %></span>
-                </div>
-                <p class="text-sm text-slate-600 mb-1"><strong>Total Hours:</strong> <%= site.totalHours %></p>
-                <p class="text-sm text-slate-600 mb-1"><strong>Visits:</strong> <%= site.visits %></p>
-                <p class="text-sm text-slate-600"><strong>Last Title:</strong> <%= site.lastTitle %></p>
-              </div>
-            <% }) %>
+        <% topWebsites.forEach((site, i) => { %>
+          <div class="border p-4 rounded-xl mb-3">
+            <p class="font-bold">#<%= i+1 %> <%= site.domain %></p>
+            <p>Time: <%= formatDuration(site.totalHours) %></p>
+            <p>Visits: <%= site.visits %></p>
           </div>
-        <% } else { %>
-          <p class="text-slate-500">No extension website activity yet.</p>
-        <% } %>
+        <% }) %>
+
       </div>
     </div>
 
-    <div class="bg-white rounded-2xl shadow border border-slate-200 p-6 mb-8">
-      <h2 class="text-2xl font-bold mb-4">Recent Browser Activity</h2>
+    <!-- RECENT -->
+    <div class="bg-white p-6 rounded-2xl shadow">
+      <h2 class="text-xl font-bold mb-4">Recent Activity</h2>
 
-      <% if (recentExtensionActivity && recentExtensionActivity.length > 0) { %>
-        <div class="overflow-x-auto">
-          <table class="w-full border-collapse">
-            <thead>
-              <tr class="bg-slate-100 text-left">
-                <th class="p-3 border">Domain</th>
-                <th class="p-3 border">Title</th>
-                <th class="p-3 border">Category</th>
-                <th class="p-3 border">Hours</th>
-                <th class="p-3 border">Time</th>
-              </tr>
-            </thead>
-            <tbody>
-              <% recentExtensionActivity.forEach(item => { %>
-                <tr>
-                  <td class="p-3 border"><%= item.domain %></td>
-                  <td class="p-3 border"><%= item.title %></td>
-                  <td class="p-3 border"><%= item.category %></td>
-                  <td class="p-3 border"><%= item.hours %></td>
-                  <td class="p-3 border"><%= new Date(item.createdAt).toLocaleString() %></td>
-                </tr>
-              <% }) %>
-            </tbody>
-          </table>
-        </div>
-      <% } else { %>
-        <p class="text-slate-500">No recent browser activity found.</p>
-      <% } %>
+      <table class="w-full">
+        <thead>
+          <tr class="bg-gray-100">
+            <th>Domain</th>
+            <th>Category</th>
+            <th>Time</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% recentExtensionActivity.forEach(item => { %>
+            <tr>
+              <td><%= item.domain %></td>
+              <td><%= item.category %></td>
+              <td><%= formatDuration(item.hours) %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+
     </div>
+
   </div>
 
   <%- include("../partials/footer") %>
-
-  <script>
-    const categoryLabels = <%- categoryChartLabels %>;
-    const categoryData = <%- categoryChartData %>;
-    const weeklyLabels = <%- weeklyChartLabels %>;
-    const weeklyData = <%- weeklyChartData %>;
-
-    const categoryCtx = document.getElementById("categoryChart").getContext("2d");
-    new Chart(categoryCtx, {
-      type: "doughnut",
-      data: {
-        labels: categoryLabels,
-        datasets: [{ label: "Hours", data: categoryData, borderWidth: 1 }]
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { position: "bottom" } }
-      }
-    });
-
-    const weeklyCtx = document.getElementById("weeklyChart").getContext("2d");
-    new Chart(weeklyCtx, {
-      type: "bar",
-      data: {
-        labels: weeklyLabels,
-        datasets: [{ label: "Hours", data: weeklyData, borderWidth: 1 }]
-      },
-      options: {
-        responsive: true,
-        scales: { y: { beginAtZero: true } }
-      }
-    });
-  </script>
 </body>
 </html>

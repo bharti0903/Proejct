@@ -9,6 +9,7 @@ const { Server } = require("socket.io");
 const connectDB = require("./config/db");
 const { initSocket } = require("./sockets");
 
+
 dotenv.config();
 connectDB();
 
@@ -21,7 +22,7 @@ const challengeRoutes = require("./routes/challengeRoutes");
 const profileRoutes = require("./routes/profileRoutes");
 const focusRoutes = require("./routes/focusRoutes");
 const extensionRoutes = require("./routes/extensionRoutes");
-
+const trackingRuleRoutes = require("./routes/trackingRuleRoutes");
 const app = express();
 const server = http.createServer(app);
 
@@ -76,6 +77,7 @@ app.use("/", challengeRoutes);
 app.use("/", profileRoutes);
 app.use("/", focusRoutes);
 app.use("/", extensionRoutes);
+app.use("/", trackingRuleRoutes);
 
 app.use((req, res) => {
   res.status(404).render("404");

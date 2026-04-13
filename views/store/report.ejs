@@ -10,6 +10,18 @@
 <body class="bg-slate-50 min-h-screen text-slate-800">
   <%- include("../partials/navbar") %>
 
+  <%
+    function formatDuration(hours) {
+      const totalMinutes = Math.round((Number(hours) || 0) * 60);
+      const hrs = Math.floor(totalMinutes / 60);
+      const mins = totalMinutes % 60;
+
+      if (hrs === 0) return `${mins} min`;
+      if (mins === 0) return `${hrs} hr`;
+      return `${hrs} hr ${mins} min`;
+    }
+  %>
+
   <div class="max-w-7xl mx-auto px-4 py-8">
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
       <div>
@@ -23,11 +35,30 @@
     </div>
 
     <div class="grid md:grid-cols-2 xl:grid-cols-5 gap-4 mb-8">
-      <div class="bg-white p-5 rounded-2xl shadow border"><p class="text-sm text-slate-500">Weekly Total</p><p class="text-2xl font-bold"><%= weeklyTotal %> hrs</p></div>
-      <div class="bg-white p-5 rounded-2xl shadow border"><p class="text-sm text-slate-500">Daily Average</p><p class="text-2xl font-bold"><%= weeklyAverage %> hrs</p></div>
-      <div class="bg-white p-5 rounded-2xl shadow border"><p class="text-sm text-slate-500">Productivity Score</p><p class="text-2xl font-bold"><%= productivityScore %>/100</p></div>
-      <div class="bg-white p-5 rounded-2xl shadow border"><p class="text-sm text-slate-500">Level</p><p class="text-2xl font-bold"><%= productivityLabel %></p></div>
-      <div class="bg-white p-5 rounded-2xl shadow border"><p class="text-sm text-slate-500">Top Category</p><p class="text-2xl font-bold"><%= topCategory %></p></div>
+      <div class="bg-white p-5 rounded-2xl shadow border">
+        <p class="text-sm text-slate-500">Weekly Total</p>
+        <p class="text-2xl font-bold"><%= formatDuration(weeklyTotal) %></p>
+      </div>
+
+      <div class="bg-white p-5 rounded-2xl shadow border">
+        <p class="text-sm text-slate-500">Daily Average</p>
+        <p class="text-2xl font-bold"><%= formatDuration(weeklyAverage) %></p>
+      </div>
+
+      <div class="bg-white p-5 rounded-2xl shadow border">
+        <p class="text-sm text-slate-500">Productivity Score</p>
+        <p class="text-2xl font-bold"><%= productivityScore %>/100</p>
+      </div>
+
+      <div class="bg-white p-5 rounded-2xl shadow border">
+        <p class="text-sm text-slate-500">Level</p>
+        <p class="text-2xl font-bold"><%= productivityLabel %></p>
+      </div>
+
+      <div class="bg-white p-5 rounded-2xl shadow border">
+        <p class="text-sm text-slate-500">Top Category</p>
+        <p class="text-2xl font-bold"><%= topCategory %></p>
+      </div>
     </div>
 
     <div class="grid xl:grid-cols-2 gap-8 mb-8">
@@ -38,15 +69,20 @@
 
       <div class="bg-white rounded-2xl shadow border p-6">
         <h2 class="text-2xl font-bold mb-4">Top Websites</h2>
-        <div class="space-y-4">
-          <% topWebsites.forEach((site, index) => { %>
-            <div class="border rounded-xl p-4">
-              <p class="font-bold">#<%= index + 1 %> <%= site.domain %></p>
-              <p><strong>Total Hours:</strong> <%= site.totalHours %></p>
-              <p><strong>Visits:</strong> <%= site.visits %></p>
-            </div>
-          <% }) %>
-        </div>
+
+        <% if (topWebsites && topWebsites.length > 0) { %>
+          <div class="space-y-4">
+            <% topWebsites.forEach((site, index) => { %>
+              <div class="border rounded-xl p-4">
+                <p class="font-bold">#<%= index + 1 %> <%= site.domain %></p>
+                <p><strong>Total Time:</strong> <%= formatDuration(site.totalHours) %></p>
+                <p><strong>Visits:</strong> <%= site.visits %></p>
+              </div>
+            <% }) %>
+          </div>
+        <% } else { %>
+          <p class="text-slate-500">No website activity found.</p>
+        <% } %>
       </div>
     </div>
 
@@ -57,7 +93,7 @@
           <thead>
             <tr class="bg-slate-100">
               <th class="p-3 border text-left">Day</th>
-              <th class="p-3 border text-left">Total Hours</th>
+              <th class="p-3 border text-left">Total Time</th>
               <th class="p-3 border text-left">Sessions</th>
             </tr>
           </thead>
@@ -65,7 +101,7 @@
             <% weeklyRows.forEach(row => { %>
               <tr>
                 <td class="p-3 border"><%= row.label %></td>
-                <td class="p-3 border"><%= row.total %></td>
+                <td class="p-3 border"><%= formatDuration(row.total) %></td>
                 <td class="p-3 border"><%= row.sessions %></td>
               </tr>
             <% }) %>
@@ -86,9 +122,21 @@
       type: "line",
       data: {
         labels: weeklyLabels,
-        datasets: [{ label: "Hours", data: weeklyData, tension: 0.35, borderWidth: 2 }]
+        datasets: [
+          {
+            label: "Hours",
+            data: weeklyData,
+            tension: 0.35,
+            borderWidth: 2
+          }
+        ]
       },
-      options: { responsive: true, scales: { y: { beginAtZero: true } } }
+      options: {
+        responsive: true,
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
     });
   </script>
 </body>

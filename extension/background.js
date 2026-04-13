@@ -166,6 +166,11 @@ async function flushCurrentTab() {
 
     const data = await response.json().catch(() => ({}));
 
+    const [activeTab] = await chrome.tabs.query({
+      active: true,
+      lastFocusedWindow: true,
+    });
+
     if (data?.alert?.dangerTriggered) {
       chrome.notifications.create({
         type: "basic",
@@ -173,6 +178,14 @@ async function flushCurrentTab() {
         title: "Danger Limit Reached",
         message: `You crossed your danger threshold. Today: ${data.alert.todayTotalFormatted || "N/A"}`,
       });
+
+      if (activeTab?.id) {
+        chrome.tabs.sendMessage(activeTab.id, {
+          type: "SHOW_PAGE_ALERT",
+          text: `Danger: You crossed your limit. Today: ${data.alert.todayTotalFormatted || "N/A"}`,
+          alertType: "danger",
+        });
+      }
     } else if (data?.alert?.warningTriggered) {
       chrome.notifications.create({
         type: "basic",
@@ -180,6 +193,14 @@ async function flushCurrentTab() {
         title: "Warning Limit Reached",
         message: `You reached your warning threshold. Today: ${data.alert.todayTotalFormatted || "N/A"}`,
       });
+
+      if (activeTab?.id) {
+        chrome.tabs.sendMessage(activeTab.id, {
+          type: "SHOW_PAGE_ALERT",
+          text: `Warning: You reached your threshold. Today: ${data.alert.todayTotalFormatted || "N/A"}`,
+          alertType: "warning",
+        });
+      }
     }
   } catch (error) {
     console.log("flushCurrentTab error:", error);
@@ -251,8 +272,6 @@ async function enforceFocusModeOnTab(tab) {
           <style>
             body { font-family: Arial, sans-serif; padding: 40px; text-align: center; background: #f8fafc; color: #0f172a; }
             .box { max-width: 650px; margin: 60px auto; background: white; border-radius: 16px; padding: 32px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
-            h1 { margin-bottom: 12px; }
-            p { color: #475569; line-height: 1.6; }
           </style>
         </head>
         <body>

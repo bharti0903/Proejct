@@ -49,6 +49,19 @@ const screenTimeSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// ─── Indexes ────────────────────────────────────────────────────────────────
+//
+// Every controller query filters by { user } and sorts/ranges on { date }.
+// Without these, MongoDB does a full collection scan on every request.
+// These two indexes cover ~95% of all queries in this app.
+
+// Covers: getTrackPage, getEditScreenTimePage, addScreenTime,
+//         dashboard today-entries, aggregation $match, alert checks
+screenTimeSchema.index({ user: 1, date: -1 });
+
+// Covers: dashboard + report extension-entry lookups (source: "extension")
+screenTimeSchema.index({ user: 1, source: 1, date: -1 });
+
 module.exports =
   mongoose.models.ScreenTime ||
   mongoose.model("ScreenTime", screenTimeSchema);
