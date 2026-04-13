@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Signup</title>
+  <link rel="stylesheet" href="/Output.css">
+</head>
+<body class="bg-slate-50 min-h-screen">
+  <%- include("../partials/navbar") %>
+
+  <div class="max-w-md mx-auto px-4 py-12">
+    <div class="bg-white rounded-2xl shadow border border-slate-200 p-8">
+      <h1 class="text-3xl font-bold text-slate-900 mb-2">Create account</h1>
+      <p class="text-slate-600 mb-6">Start tracking healthier digital habits.</p>
+
+      <% if (error) { %>
+        <div class="mb-4 p-4 rounded-lg bg-red-100 text-red-700 border border-red-200">
+          <%= error %>
+        </div>
+      <% } %>
+
+      <form action="/signup" method="POST" class="grid gap-4">
+        <div>
+          <label class="block mb-2 font-medium">Name</label>
+          <input
+            type="text"
+            name="name"
+            class="w-full border rounded-lg px-4 py-3"
+            required
+          >
+        </div>
+
+        <div>
+          <label class="block mb-2 font-medium">Email</label>
+          <input
+            type="email"
+            name="email"
+            class="w-full border rounded-lg px-4 py-3"
+            required
+          >
+        </div>
+
+        <div>
+          <label class="block mb-2 font-medium">Password</label>
+          <input
+            type="password"
+            name="password"
+            class="w-full border rounded-lg px-4 py-3"
+            required
+          >
+        </div>
+
+        <div>
+          <label class="block mb-2 font-medium">Confirm Password</label>
+          <input
+            type="password"
+            name="confirmPassword"
+            class="w-full border rounded-lg px-4 py-3"
+            required
+          >
+        </div>
+
+        <button
+          type="submit"
+          class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-semibold"
+        >
+          Sign Up
+        </button>
+      </form>
+
+      <p class="text-sm text-slate-600 mt-6">
+        Already have an account?
+        <a href="/login" class="text-indigo-600 font-semibold">Login</a>
+      </p>
+    </div>
+  </div>
+
+  <%- include("../partials/footer") %>
+</body>
+</html>

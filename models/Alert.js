@@ -10,11 +10,12 @@ const alertSchema = new mongoose.Schema(
     message: {
       type: String,
       required: true,
+      trim: true,
     },
     type: {
       type: String,
-      enum: ["info", "warning", "danger"],
-      default: "warning",
+      enum: ["warning", "danger", "info"],
+      default: "info",
     },
     isRead: {
       type: Boolean,
@@ -24,4 +25,4 @@ const alertSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Alert", alertSchema);
+module.exports = mongoose.models.Alert || mongoose.model("Alert", alertSchema);

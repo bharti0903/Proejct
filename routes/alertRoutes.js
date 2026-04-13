@@ -1,13 +1,8 @@
 const express = require("express");
 const router = express.Router();
-
 const { protect } = require("../middleware/authMiddleware");
-const {
-  getSmartAlertsPage,
-  saveSmartAlertThresholds
-} = require("../controllers/alertController");
+const { getAlertsPage } = require("../controllers/alertController");
 
-router.get("/smart-alerts", protect, getSmartAlertsPage);
-router.post("/smart-alerts", protect, saveSmartAlertThresholds);
+router.get("/alerts", protect, getAlertsPage);
 
 module.exports = router;

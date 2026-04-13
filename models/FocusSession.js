@@ -38,4 +38,4 @@ const focusSessionSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("FocusSession", focusSessionSchema);
+module.exports = mongoose.models.FocusSession || mongoose.model("FocusSession", focusSessionSchema);

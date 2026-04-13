@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Digital Addiction Awareness Tracker",
   "version": "2.2.0",
-  "description": "Tracks active browser usage and sends it to backend",
+  "description": "Tracks active browser usage and connects it to the web app",
   "permissions": [
     "tabs",
     "storage",

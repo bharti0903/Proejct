@@ -2,118 +2,130 @@ const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 
 const getLoginPage = (req, res) => {
-  res.render("auth/login", { error: null });
-};
-
-const loginUser = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    const user = await User.findOne({
-      email: email.trim().toLowerCase(),
-    });
-
-    if (!user) {
-      return res.render("auth/login", {
-        error: "Invalid email or password",
-      });
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-
-    if (!isMatch) {
-      return res.render("auth/login", {
-        error: "Invalid email or password",
-      });
-    }
-
-    req.session.userId = user._id;
-    req.session.userName = user.name;
-
-    res.redirect("/");
-  } catch (error) {
-    console.error(error);
-    res.render("auth/login", {
-      error: "Login failed",
-    });
-  }
+  res.render("store/login", {
+    error: null,
+    success: null,
+  });
 };
 
 const getSignupPage = (req, res) => {
-  res.render("auth/signup", { error: null });
+  res.render("store/signup", {
+    error: null,
+    success: null,
+  });
 };
 
-const signupUser = async (req, res) => {
+const signup = async (req, res) => {
   try {
-    const { firstName, lastName, email, password, confirmPassword } = req.body;
+    const { name, email, password, confirmPassword } = req.body;
 
-    const fullName = `${firstName || ""} ${lastName || ""}`.trim();
-
-    if (!firstName || !lastName || !email || !password || !confirmPassword) {
-      return res.render("auth/signup", {
+    if (!name || !email || !password || !confirmPassword) {
+      return res.render("store/signup", {
         error: "All fields are required",
-      });
-    }
-
-    if (password !== confirmPassword) {
-      return res.render("auth/signup", {
-        error: "Passwords do not match",
+        success: null,
       });
     }
 
     if (password.length < 6) {
-      return res.render("auth/signup", {
+      return res.render("store/signup", {
         error: "Password must be at least 6 characters long",
+        success: null,
+      });
+    }
+
+    if (password !== confirmPassword) {
+      return res.render("store/signup", {
+        error: "Passwords do not match",
+        success: null,
       });
     }
 
     const existingUser = await User.findOne({
-      email: email.trim().toLowerCase(),
+      email: String(email).toLowerCase().trim(),
     });
 
     if (existingUser) {
-      return res.render("auth/signup", {
-        error: "User already exists",
+      return res.render("store/signup", {
+        error: "User already exists with this email",
+        success: null,
       });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     await User.create({
-      name: fullName,
-      email: email.trim().toLowerCase(),
+      name: String(name).trim(),
+      email: String(email).toLowerCase().trim(),
       password: hashedPassword,
-      dailyLimit: 4,
-      warningLimit: 3,
-      dangerLimit: 4,
-      currentStreak: 0,
-      bestStreak: 0,
-      lastStreakDate: null,
     });
 
-    res.redirect("/login");
+    return res.render("store/login", {
+      error: null,
+      success: "Signup successful. Please login.",
+    });
   } catch (error) {
     console.error("SIGNUP ERROR:", error);
-    res.render("auth/signup", {
+    return res.render("store/signup", {
       error: "Signup failed",
+      success: null,
     });
   }
 };
 
-const logoutUser = (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      console.error(err);
-      return res.redirect("/");
+const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.render("store/login", {
+        error: "Email and password are required",
+        success: null,
+      });
     }
-    res.redirect("/login");
+
+    const user = await User.findOne({
+      email: String(email).toLowerCase().trim(),
+    });
+
+    if (!user) {
+      return res.render("store/login", {
+        error: "Invalid email or password",
+        success: null,
+      });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.render("store/login", {
+        error: "Invalid email or password",
+        success: null,
+      });
+    }
+
+    req.session.userId = user._id.toString();
+    req.session.userName = user.name;
+
+    return res.redirect("/dashboard");
+  } catch (error) {
+    console.error("LOGIN ERROR:", error);
+    return res.render("store/login", {
+      error: "Login failed",
+      success: null,
+    });
+  }
+};
+
+const logout = (req, res) => {
+  req.session.destroy(() => {
+    return res.redirect("/login");
   });
 };
 
 module.exports = {
   getLoginPage,
-  loginUser,
   getSignupPage,
-  signupUser,
-  logoutUser,
+  signup,
+  login,
+  logout,
 };

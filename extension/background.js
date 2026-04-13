@@ -102,7 +102,6 @@ async function captureActiveTab() {
     if (!tabs || !tabs.length) return;
 
     const tab = tabs[0];
-
     if (!tab.id || !tab.url) return;
     if (shouldIgnoreUrl(tab.url)) {
       resetCurrentTab();
@@ -242,7 +241,9 @@ async function enforceFocusModeOnTab(tab) {
     });
 
     await chrome.tabs.update(tab.id, {
-      url: "data:text/html;charset=utf-8," + encodeURIComponent(`
+      url:
+        "data:text/html;charset=utf-8," +
+        encodeURIComponent(`
         <!DOCTYPE html>
         <html>
         <head>

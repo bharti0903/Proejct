@@ -21,7 +21,6 @@ const challengeRoutes = require("./routes/challengeRoutes");
 const profileRoutes = require("./routes/profileRoutes");
 const focusRoutes = require("./routes/focusRoutes");
 const extensionRoutes = require("./routes/extensionRoutes");
-const pageRoutes = require("./routes/pageRoutes");
 
 const app = express();
 const server = http.createServer(app);
@@ -57,7 +56,15 @@ app.use(
 
 app.use((req, res, next) => {
   res.locals.currentUser = req.session.userName || null;
+  res.locals.userId = req.session.userId || null;
   next();
+});
+
+app.get("/", (req, res) => {
+  if (req.session.userId) {
+    return res.redirect("/dashboard");
+  }
+  return res.redirect("/login");
 });
 
 app.use("/", dashboardRoutes);
@@ -69,7 +76,6 @@ app.use("/", challengeRoutes);
 app.use("/", profileRoutes);
 app.use("/", focusRoutes);
 app.use("/", extensionRoutes);
-app.use("/", pageRoutes);
 
 app.use((req, res) => {
   res.status(404).render("404");

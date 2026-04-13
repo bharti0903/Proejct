@@ -15,4 +15,3 @@ router.post("/focus-mode/start", protect, startFocusSession);
 router.post("/focus-mode/stop", protect, stopFocusSession);
 
 module.exports = router;
-console.log("focusRoutes loaded");

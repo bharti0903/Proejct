@@ -16,11 +16,9 @@ const initSocket = (io) => {
   });
 };
 
-const getIO = () => {
-  return ioInstance;
-};
+const getIO = () => ioInstance;
 
 module.exports = {
   initSocket,
-  getIO
+  getIO,
 };

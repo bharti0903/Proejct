@@ -2,36 +2,38 @@ const mongoose = require("mongoose");
 
 const challengeSchema = new mongoose.Schema(
   {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
     title: {
       type: String,
       required: true,
+      trim: true,
     },
     description: {
       type: String,
-      required: true,
+      default: "",
+      trim: true,
     },
-    targetDays: {
+    targetHours: {
       type: Number,
-      required: true,
+      default: 1,
+      min: 0,
     },
-    participants: [
-      {
-        user: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "User",
-        },
-        progressDays: {
-          type: Number,
-          default: 0,
-        },
-        completed: {
-          type: Boolean,
-          default: false,
-        },
-      },
-    ],
+    category: {
+      type: String,
+      enum: ["Social Media", "Entertainment", "Study", "Gaming", "Other", "Any"],
+      default: "Any",
+    },
+    status: {
+      type: String,
+      enum: ["active", "completed", "failed"],
+      default: "active",
+    },
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Challenge", challengeSchema);
+module.exports = mongoose.models.Challenge || mongoose.model("Challenge", challengeSchema);

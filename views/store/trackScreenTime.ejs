@@ -3,244 +3,92 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Activity Tracking</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <title>Track Screen Time</title>
+  <link rel="stylesheet" href="/Output.css">
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-800">
-
   <%- include("../partials/navbar") %>
-
-  <%
-    function formatTime(value) {
-      const h = Math.floor(value || 0);
-      const m = Math.round(((value || 0) % 1) * 60);
-      return `${h}h ${m}m`;
-    }
-  %>
 
   <div class="max-w-6xl mx-auto px-4 py-8">
     <div class="mb-8">
       <h1 class="text-3xl font-bold text-slate-900">Activity Tracking</h1>
-      <p class="text-slate-600">Track live sessions, review today’s activity, and stay within your limits.</p>
+      <p class="text-slate-600">Track live sessions and manual entries.</p>
     </div>
 
-    <% if (error) { %>
-      <div class="mb-4 p-4 rounded-lg bg-red-100 text-red-700 border border-red-200">
-        <%= error %>
-      </div>
-    <% } %>
+    <div class="grid md:grid-cols-4 gap-4 mb-8">
+      <div class="bg-white p-5 rounded-2xl shadow border"><p class="text-sm text-slate-500">Today</p><p class="text-2xl font-bold"><%= todayTotal %> hrs</p></div>
+      <div class="bg-white p-5 rounded-2xl shadow border"><p class="text-sm text-slate-500">Time Left</p><p class="text-2xl font-bold"><%= timeLeft %> hrs</p></div>
+      <div class="bg-white p-5 rounded-2xl shadow border"><p class="text-sm text-slate-500">Sessions</p><p class="text-2xl font-bold"><%= sessionCount %></p></div>
+      <div class="bg-white p-5 rounded-2xl shadow border"><p class="text-sm text-slate-500">Status</p><p class="text-2xl font-bold"><%= usageStatus %></p></div>
+    </div>
 
-    <% if (success) { %>
-      <div class="mb-4 p-4 rounded-lg bg-green-100 text-green-700 border border-green-200">
-        <%= success %>
-      </div>
-    <% } %>
+    <div class="bg-white rounded-2xl shadow border p-6 mb-8">
+      <h2 class="text-2xl font-bold mb-4">Live Session Timer</h2>
+      <p id="liveTimer" class="text-5xl font-bold mb-4">00:00:00</p>
 
-    <div class="grid md:grid-cols-2 xl:grid-cols-5 gap-4 mb-8">
-      <div class="bg-white p-5 rounded-2xl shadow border border-slate-200">
-        <p class="text-sm text-slate-500">Today’s Usage</p>
-        <p id="todayUsageValue" class="text-2xl font-bold text-indigo-700"><%= todayTotal %> hrs</p>
-      </div>
-
-      <div class="bg-white p-5 rounded-2xl shadow border border-slate-200">
-        <p class="text-sm text-slate-500">Time Left</p>
-        <p id="timeLeftValue" class="text-2xl font-bold text-green-700"><%= timeLeft %> hrs</p>
-      </div>
-
-      <div class="bg-white p-5 rounded-2xl shadow border border-slate-200">
-        <p class="text-sm text-slate-500">Sessions Today</p>
-        <p class="text-2xl font-bold text-blue-700"><%= sessionCount %></p>
+      <div class="grid md:grid-cols-2 gap-4 mb-4">
+        <select id="sessionCategory" class="border rounded-lg px-4 py-3">
+          <option value="Social Media">Social Media</option>
+          <option value="Entertainment">Entertainment</option>
+          <option value="Study">Study</option>
+          <option value="Gaming">Gaming</option>
+          <option value="Other">Other</option>
+        </select>
+        <input id="sessionNotes" class="border rounded-lg px-4 py-3" placeholder="Optional notes">
       </div>
 
-      <div class="bg-white p-5 rounded-2xl shadow border border-slate-200">
-        <p class="text-sm text-slate-500">Most Used</p>
-        <p class="text-2xl font-bold text-slate-900"><%= mostUsedCategory %></p>
-      </div>
-
-      <div class="bg-white p-5 rounded-2xl shadow border border-slate-200">
-        <p class="text-sm text-slate-500">Usage Status</p>
-        <p id="usageStatusValue" class="text-2xl font-bold text-red-600"><%= usageStatus %></p>
+      <div class="flex gap-3">
+        <button id="startBtn" class="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold">Start</button>
+        <button id="stopBtn" class="bg-red-600 text-white px-6 py-3 rounded-lg font-semibold" disabled>Stop & Save</button>
       </div>
     </div>
 
-    <div class="bg-white rounded-2xl shadow border border-slate-200 p-6 mb-8">
-      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-        <div>
-          <h2 class="text-2xl font-bold">Live Session Timer</h2>
-          <p class="text-slate-500">Use this for manual real-time tracking on the website.</p>
-        </div>
-        <div class="text-right">
-          <p id="progressLabel" class="text-sm text-slate-500 mb-2"><%= progressPercent %>% of daily limit used</p>
-          <div class="w-64 h-3 bg-slate-200 rounded-full overflow-hidden">
-            <div
-              id="dailyProgressBar"
-              class="h-full bg-indigo-600 rounded-full"
-              style="width: <%= progressPercent %>%"
-            ></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="grid lg:grid-cols-3 gap-6">
-        <div class="lg:col-span-2 border rounded-xl p-5 bg-slate-50">
-          <p class="text-sm text-slate-500 mb-2">Session Time</p>
-          <p id="liveTimer" class="text-5xl font-bold tracking-wide text-slate-900 mb-4">00:00:00</p>
-
-          <p id="sessionStatus" class="text-sm text-slate-600 mb-4">Timer is idle</p>
-          <p id="motivationText" class="text-sm text-indigo-600 font-medium mb-4">Stay focused 💪</p>
-
-          <div class="flex flex-wrap gap-3">
-            <button id="startBtn" type="button" class="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition">
-              Start Tracking
-            </button>
-
-            <button id="stopBtn" type="button" class="bg-red-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-700 transition" disabled>
-              Stop & Save
-            </button>
-          </div>
-
-          <div id="sessionMessage" class="hidden mt-4 p-4 rounded-lg border"></div>
-        </div>
-
-        <div class="border rounded-xl p-5">
-          <div class="mb-4">
-            <label class="block mb-2 font-medium">Session Category</label>
-            <select id="sessionCategory" class="w-full border rounded-lg px-4 py-3">
-              <option value="Social Media">Social Media</option>
-              <option value="Entertainment">Entertainment</option>
-              <option value="Study">Study</option>
-              <option value="Gaming">Gaming</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="block mb-2 font-medium">Session Notes</label>
-            <textarea
-              id="sessionNotes"
-              rows="4"
-              placeholder="Optional notes for this session"
-              class="w-full border rounded-lg px-4 py-3"
-            ></textarea>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="bg-white rounded-2xl shadow border border-slate-200 p-6 mb-8">
-      <h2 class="text-2xl font-bold mb-6"><%= editEntry ? "Edit Entry" : "Add Manual Entry" %></h2>
+    <div class="bg-white rounded-2xl shadow border p-6 mb-8">
+      <h2 class="text-2xl font-bold mb-4"><%= editEntry ? "Edit Entry" : "Add Manual Entry" %></h2>
 
       <form action="<%= editEntry ? '/track-screen-time/update/' + editEntry._id : '/track-screen-time' %>" method="POST" class="grid md:grid-cols-2 gap-4">
-        <div>
-          <label class="block mb-2 font-medium">Category</label>
-          <select name="category" class="w-full border rounded-lg px-4 py-3" required>
-            <option value="">Select category</option>
-            <option value="Social Media" <%= editEntry && editEntry.category === 'Social Media' ? 'selected' : '' %>>Social Media</option>
-            <option value="Entertainment" <%= editEntry && editEntry.category === 'Entertainment' ? 'selected' : '' %>>Entertainment</option>
-            <option value="Study" <%= editEntry && editEntry.category === 'Study' ? 'selected' : '' %>>Study</option>
-            <option value="Gaming" <%= editEntry && editEntry.category === 'Gaming' ? 'selected' : '' %>>Gaming</option>
-            <option value="Other" <%= editEntry && editEntry.category === 'Other' ? 'selected' : '' %>>Other</option>
-          </select>
-        </div>
+        <select name="category" class="border rounded-lg px-4 py-3" required>
+          <option value="Social Media" <%= editEntry && editEntry.category === 'Social Media' ? 'selected' : '' %>>Social Media</option>
+          <option value="Entertainment" <%= editEntry && editEntry.category === 'Entertainment' ? 'selected' : '' %>>Entertainment</option>
+          <option value="Study" <%= editEntry && editEntry.category === 'Study' ? 'selected' : '' %>>Study</option>
+          <option value="Gaming" <%= editEntry && editEntry.category === 'Gaming' ? 'selected' : '' %>>Gaming</option>
+          <option value="Other" <%= editEntry && editEntry.category === 'Other' ? 'selected' : '' %>>Other</option>
+        </select>
 
-        <div>
-          <label class="block mb-2 font-medium">Hours</label>
-          <input
-            type="number"
-            name="hours"
-            step="0.1"
-            min="0"
-            max="24"
-            value="<%= editEntry ? editEntry.hours : '' %>"
-            class="w-full border rounded-lg px-4 py-3"
-            required
-          >
-        </div>
-
-        <div class="md:col-span-2">
-          <label class="block mb-2 font-medium">Notes</label>
-          <input
-            type="text"
-            name="notes"
-            placeholder="Optional notes"
-            value="<%= editEntry ? editEntry.notes : '' %>"
-            class="w-full border rounded-lg px-4 py-3"
-          >
-        </div>
+        <input type="number" step="0.1" min="0" max="24" name="hours" value="<%= editEntry ? editEntry.hours : '' %>" class="border rounded-lg px-4 py-3" required>
+        <input type="text" name="notes" value="<%= editEntry ? editEntry.notes : '' %>" class="md:col-span-2 border rounded-lg px-4 py-3" placeholder="Optional notes">
 
         <div class="md:col-span-2 flex gap-3">
-          <button type="submit" class="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition">
-            <%= editEntry ? "Update Entry" : "Save Manual Entry" %>
+          <button class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold">
+            <%= editEntry ? "Update" : "Save" %>
           </button>
-
           <% if (editEntry) { %>
-            <a href="/track-screen-time" class="px-6 py-3 rounded-lg border border-slate-300 font-semibold hover:bg-slate-50 transition">
-              Cancel
-            </a>
+            <a href="/track-screen-time" class="px-6 py-3 rounded-lg border">Cancel</a>
           <% } %>
         </div>
       </form>
     </div>
 
-    <div class="bg-white rounded-2xl shadow border border-slate-200 p-6 mb-8">
-      <h2 class="text-2xl font-bold mb-6">Today’s Session History</h2>
-
-      <% if (todayEntries && todayEntries.length > 0) { %>
-        <div class="space-y-4">
-          <% todayEntries.forEach(entry => { %>
-            <div class="border rounded-xl p-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-              <div>
-                <p><strong>Category:</strong> <%= entry.category %></p>
-                <p><strong>Hours:</strong> <%= Number(entry.hours).toFixed(4) %></p>
-                <p><strong>Source:</strong> <%= entry.source || "manual" %></p>
-                <p><strong>Domain:</strong> <%= entry.domain || "N/A" %></p>
-                <p><strong>Title:</strong> <%= entry.title || "N/A" %></p>
-                <p><strong>URL:</strong> <%= entry.url || "N/A" %></p>
-                <p><strong>Notes:</strong> <%= entry.notes || "No notes" %></p>
-                <p><strong>Time:</strong> <%= new Date(entry.createdAt).toLocaleString() %></p>
-              </div>
-
-              <div class="flex gap-3">
-                <a href="/track-screen-time/edit/<%= entry._id %>" class="px-4 py-2 rounded-lg bg-yellow-500 text-white font-semibold hover:bg-yellow-600 transition">
-                  Edit
-                </a>
-
-                <form action="/track-screen-time/delete/<%= entry._id %>" method="POST" onsubmit="return confirm('Delete this entry?')">
-                  <button type="submit" class="px-4 py-2 rounded-lg bg-red-500 text-white font-semibold hover:bg-red-600 transition">
-                    Delete
-                  </button>
-                </form>
-              </div>
+    <div class="bg-white rounded-2xl shadow border p-6">
+      <h2 class="text-2xl font-bold mb-4">Recent Entries</h2>
+      <div class="space-y-4">
+        <% entries.forEach(entry => { %>
+          <div class="border rounded-xl p-4">
+            <p><strong>Category:</strong> <%= entry.category %></p>
+            <p><strong>Hours:</strong> <%= Number(entry.hours).toFixed(4) %></p>
+            <p><strong>Source:</strong> <%= entry.source || "manual" %></p>
+            <p><strong>Domain:</strong> <%= entry.domain || "N/A" %></p>
+            <p><strong>Title:</strong> <%= entry.title || "N/A" %></p>
+            <p><strong>Notes:</strong> <%= entry.notes || "No notes" %></p>
+            <div class="mt-3 flex gap-3">
+              <a href="/track-screen-time/edit/<%= entry._id %>" class="bg-yellow-500 text-white px-4 py-2 rounded-lg">Edit</a>
+              <form action="/track-screen-time/delete/<%= entry._id %>" method="POST">
+                <button class="bg-red-500 text-white px-4 py-2 rounded-lg">Delete</button>
+              </form>
             </div>
-          <% }) %>
-        </div>
-      <% } else { %>
-        <p class="text-slate-500">No activity sessions recorded today.</p>
-      <% } %>
-    </div>
-
-    <div class="bg-white rounded-2xl shadow border border-slate-200 p-6">
-      <h2 class="text-2xl font-bold mb-6">All Activity Records</h2>
-
-      <% if (entries && entries.length > 0) { %>
-        <div class="space-y-4">
-          <% entries.forEach(entry => { %>
-            <div class="border rounded-xl p-4">
-              <p><strong>Category:</strong> <%= entry.category %></p>
-              <p><strong>Hours:</strong> <%= entry.hours %></p>
-              <p><strong>Source:</strong> <%= entry.source || "manual" %></p>
-              <p><strong>Domain:</strong> <%= entry.domain || "N/A" %></p>
-              <p><strong>Title:</strong> <%= entry.title || "N/A" %></p>
-              <p><strong>URL:</strong> <%= entry.url || "N/A" %></p>
-              <p><strong>Notes:</strong> <%= entry.notes || "No notes" %></p>
-              <p><strong>Date:</strong> <%= new Date(entry.date).toLocaleDateString() %></p>
-            </div>
-          <% }) %>
-        </div>
-      <% } else { %>
-        <p class="text-slate-500">No activity records found.</p>
-      <% } %>
+          </div>
+        <% }) %>
+      </div>
     </div>
   </div>
 
@@ -248,59 +96,11 @@
   <%- include("../partials/toast", { userId }) %>
 
   <script>
-    socket.on("screenTimeUpdated", function () {
-      window.location.reload();
-    });
-
+    let timerInterval = null;
+    let elapsedSeconds = 0;
+    const liveTimer = document.getElementById("liveTimer");
     const startBtn = document.getElementById("startBtn");
     const stopBtn = document.getElementById("stopBtn");
-    const liveTimer = document.getElementById("liveTimer");
-    const sessionCategory = document.getElementById("sessionCategory");
-    const sessionNotes = document.getElementById("sessionNotes");
-    const sessionMessage = document.getElementById("sessionMessage");
-    const motivationText = document.getElementById("motivationText");
-    const sessionStatus = document.getElementById("sessionStatus");
-
-    const todayUsageValue = document.getElementById("todayUsageValue");
-    const timeLeftValue = document.getElementById("timeLeftValue");
-    const usageStatusValue = document.getElementById("usageStatusValue");
-    const progressLabel = document.getElementById("progressLabel");
-    const dailyProgressBar = document.getElementById("dailyProgressBar");
-
-    const baseTodayTotal = <%- JSON.stringify(todayTotal || 0) %>;
-    const dailyLimit = <%- JSON.stringify(dailyLimit || 0) %>;
-    const warningLimit = <%- JSON.stringify(warningLimit || 0) %>;
-    const dangerLimit = <%- JSON.stringify(dangerLimit || 0) %>;
-
-    let timerInterval = null;
-    let liveWarningShown = false;
-    let liveDangerShown = false;
-    let elapsedSeconds = 0;
-
-    const messages = [
-      "Stay focused 💪",
-      "You are doing great 👍",
-      "Keep going 🚀",
-      "Avoid distractions 📵",
-      "Take a short break soon 🧘"
-    ];
-
-    function randomMessage() {
-      return messages[Math.floor(Math.random() * messages.length)];
-    }
-
-    function showMessage(text, isSuccess) {
-      sessionMessage.className = "mt-4 p-4 rounded-lg border";
-      sessionMessage.classList.remove("hidden");
-
-      if (isSuccess) {
-        sessionMessage.classList.add("bg-green-100", "text-green-700", "border-green-200");
-      } else {
-        sessionMessage.classList.add("bg-red-100", "text-red-700", "border-red-200");
-      }
-
-      sessionMessage.textContent = text;
-    }
 
     function formatClock(totalSeconds) {
       const hrs = String(Math.floor(totalSeconds / 3600)).padStart(2, "0");
@@ -309,103 +109,38 @@
       return `${hrs}:${mins}:${secs}`;
     }
 
-    function getUsageStatus(value) {
-      if (value < warningLimit) return "Healthy";
-      if (value >= warningLimit && value < dangerLimit) return "Approaching Limit";
-      return "Limit Reached";
-    }
-
-    function updateProgressUI(hoursUsed) {
-      const timeLeft = Math.max(dailyLimit - hoursUsed, 0);
-      const progressPercent = dailyLimit > 0 ? Math.min((hoursUsed / dailyLimit) * 100, 100) : 0;
-
-      todayUsageValue.textContent = `${hoursUsed.toFixed(2)} hrs`;
-      timeLeftValue.textContent = `${timeLeft.toFixed(2)} hrs`;
-      usageStatusValue.textContent = getUsageStatus(hoursUsed);
-      progressLabel.textContent = `${progressPercent.toFixed(1)}% of daily limit used`;
-      dailyProgressBar.style.width = `${progressPercent}%`;
-    }
-
-    function showLiveThresholdAlert(hoursUsed) {
-      if (!liveWarningShown && hoursUsed >= warningLimit && hoursUsed < dangerLimit) {
-        liveWarningShown = true;
-        alert("Warning: You have reached your warning threshold.");
-      }
-
-      if (!liveDangerShown && hoursUsed >= dangerLimit) {
-        liveDangerShown = true;
-        alert("Danger: You have reached your danger threshold.");
-      }
-    }
-
-    startBtn.addEventListener("click", function () {
+    startBtn.addEventListener("click", () => {
       if (timerInterval) return;
-
       elapsedSeconds = 0;
       liveTimer.textContent = "00:00:00";
-      sessionStatus.textContent = "Tracking in progress...";
-      motivationText.textContent = randomMessage();
-      sessionMessage.classList.add("hidden");
-
       startBtn.disabled = true;
       stopBtn.disabled = false;
 
       timerInterval = setInterval(() => {
         elapsedSeconds += 1;
         liveTimer.textContent = formatClock(elapsedSeconds);
-
-        const currentHours = baseTodayTotal + elapsedSeconds / 3600;
-        updateProgressUI(currentHours);
-        showLiveThresholdAlert(currentHours);
-
-        if (elapsedSeconds % 10 === 0) {
-          motivationText.textContent = randomMessage();
-        }
       }, 1000);
     });
 
-    stopBtn.addEventListener("click", async function () {
+    stopBtn.addEventListener("click", async () => {
       if (!timerInterval) return;
-
       clearInterval(timerInterval);
       timerInterval = null;
-
       startBtn.disabled = false;
       stopBtn.disabled = true;
-      sessionStatus.textContent = "Saving tracked session...";
 
-      try {
-        const response = await fetch("/track-screen-time/session", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            category: sessionCategory.value,
-            minutes: elapsedSeconds / 60,
-            notes: sessionNotes.value
-          })
-        });
+      await fetch("/track-screen-time/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          category: document.getElementById("sessionCategory").value,
+          minutes: elapsedSeconds / 60,
+          notes: document.getElementById("sessionNotes").value
+        })
+      });
 
-        const data = await response.json();
-
-        if (data.success) {
-          showMessage("Session saved successfully", true);
-          sessionStatus.textContent = "Session saved";
-          setTimeout(() => {
-            window.location.reload();
-          }, 700);
-        } else {
-          showMessage(data.message || "Could not save session", false);
-          sessionStatus.textContent = "Failed to save session";
-        }
-      } catch (error) {
-        console.error(error);
-        showMessage("Could not save session", false);
-        sessionStatus.textContent = "Failed to save session";
-      }
+      window.location.reload();
     });
   </script>
-
 </body>
 </html>

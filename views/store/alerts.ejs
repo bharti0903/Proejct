@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Alerts</title>
+  <link rel="stylesheet" href="/Output.css">
+</head>
+<body class="bg-slate-50 min-h-screen">
+  <%- include("../partials/navbar") %>
+  <div class="max-w-4xl mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6">Alerts</h1>
+    <div class="space-y-4">
+      <% alerts.forEach(alert => { %>
+        <div class="bg-white border rounded-xl p-4">
+          <p><strong><%= alert.type %></strong></p>
+          <p><%= alert.message %></p>
+          <p class="text-sm text-slate-500"><%= new Date(alert.createdAt).toLocaleString() %></p>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+  <%- include("../partials/footer") %>
+</body>
+</html>

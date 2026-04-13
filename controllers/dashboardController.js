@@ -6,7 +6,7 @@ const CATEGORY_KEYS = [
   "Entertainment",
   "Study",
   "Gaming",
-  "Other"
+  "Other",
 ];
 
 const formatHours = (value) => Number((value || 0).toFixed(4));
@@ -25,13 +25,11 @@ const getEndOfDay = (date = new Date()) => {
 
 const getLast7Days = () => {
   const days = [];
-
   for (let i = 6; i >= 0; i--) {
     const d = getStartOfDay(new Date());
     d.setDate(d.getDate() - i);
     days.push(d);
   }
-
   return days;
 };
 
@@ -50,7 +48,7 @@ const getDashboardPage = async (req, res) => {
     }
 
     const allEntries = await ScreenTime.find({
-      user: req.session.userId
+      user: req.session.userId,
     }).sort({ createdAt: -1 });
 
     const startOfToday = getStartOfDay();
@@ -58,11 +56,10 @@ const getDashboardPage = async (req, res) => {
 
     const todayEntries = await ScreenTime.find({
       user: req.session.userId,
-      date: { $gte: startOfToday, $lt: endOfToday }
+      date: { $gte: startOfToday, $lt: endOfToday },
     }).sort({ createdAt: -1 });
 
     const todayTotal = todayEntries.reduce((sum, entry) => sum + entry.hours, 0);
-    const todayTotalRounded = formatHours(todayTotal);
     const timeLeft = Math.max(user.dailyLimit - todayTotal, 0);
 
     const categoryTotals = {
@@ -70,7 +67,7 @@ const getDashboardPage = async (req, res) => {
       Entertainment: 0,
       Study: 0,
       Gaming: 0,
-      Other: 0
+      Other: 0,
     };
 
     todayEntries.forEach((entry) => {
@@ -107,24 +104,22 @@ const getDashboardPage = async (req, res) => {
 
       const dayEntries = await ScreenTime.find({
         user: req.session.userId,
-        date: { $gte: day, $lt: nextDay }
+        date: { $gte: day, $lt: nextDay },
       });
 
       const total = dayEntries.reduce((sum, entry) => sum + entry.hours, 0);
 
-      const dayLabel = day.toLocaleDateString("en-IN", {
-        weekday: "short"
-      });
-
-      weeklyChartLabels.push(dayLabel);
+      weeklyChartLabels.push(
+        day.toLocaleDateString("en-IN", { weekday: "short" })
+      );
       weeklyChartData.push(formatHours(total));
       weeklyBreakdown.push({
         label: day.toLocaleDateString("en-IN", {
           weekday: "long",
           day: "numeric",
-          month: "short"
+          month: "short",
         }),
-        total: formatHours(total)
+        total: formatHours(total),
       });
     }
 
@@ -139,13 +134,14 @@ const getDashboardPage = async (req, res) => {
 
     extensionEntries.forEach((entry) => {
       const key = entry.domain || "Unknown";
+
       if (!websiteMap[key]) {
         websiteMap[key] = {
           domain: key,
           totalHours: 0,
           visits: 0,
           lastTitle: entry.title || "N/A",
-          category: entry.category || "Other"
+          category: entry.category || "Other",
         };
       }
 
@@ -165,17 +161,19 @@ const getDashboardPage = async (req, res) => {
         totalHours: formatHours(site.totalHours),
         visits: site.visits,
         lastTitle: site.lastTitle,
-        category: site.category
+        category: site.category,
       }));
 
-    const recentExtensionActivity = extensionEntries.slice(0, 8).map((entry) => ({
-      domain: entry.domain || "N/A",
-      title: entry.title || "N/A",
-      url: entry.url || "N/A",
-      category: entry.category || "Other",
-      hours: formatHours(entry.hours || 0),
-      createdAt: entry.createdAt
-    }));
+    const recentExtensionActivity = extensionEntries
+      .slice(0, 8)
+      .map((entry) => ({
+        domain: entry.domain || "N/A",
+        title: entry.title || "N/A",
+        url: entry.url || "N/A",
+        category: entry.category || "Other",
+        hours: formatHours(entry.hours || 0),
+        createdAt: entry.createdAt,
+      }));
 
     const progressPercent =
       user.dailyLimit > 0
@@ -187,7 +185,7 @@ const getDashboardPage = async (req, res) => {
     res.render("store/dashboard", {
       userName: req.session.userName || user.name || null,
       user,
-      todayTotal: todayTotalRounded,
+      todayTotal: formatHours(todayTotal),
       timeLeft: formatHours(timeLeft),
       dailyLimit: user.dailyLimit,
       warningLimit: user.warningLimit,
@@ -205,7 +203,8 @@ const getDashboardPage = async (req, res) => {
       weeklyChartData: JSON.stringify(weeklyChartData),
       topWebsites,
       recentExtensionActivity,
-      weeklyBreakdown
+      weeklyBreakdown,
+      error: null,
     });
   } catch (error) {
     console.error("DASHBOARD ERROR:", error);
@@ -231,11 +230,11 @@ const getDashboardPage = async (req, res) => {
       topWebsites: [],
       recentExtensionActivity: [],
       weeklyBreakdown: [],
-      error: "Could not load dashboard"
+      error: "Could not load dashboard",
     });
   }
 };
 
 module.exports = {
-  getDashboardPage
+  getDashboardPage,
 };

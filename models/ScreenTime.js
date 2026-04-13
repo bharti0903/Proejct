@@ -5,43 +5,50 @@ const screenTimeSchema = new mongoose.Schema(
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true
+      required: true,
     },
     category: {
       type: String,
-      default: "Other"
+      required: true,
+      enum: ["Social Media", "Entertainment", "Study", "Gaming", "Other"],
     },
     hours: {
       type: Number,
       required: true,
-      default: 0
+      min: 0,
     },
     notes: {
       type: String,
-      default: ""
-    },
-    source: {
-      type: String,
-      default: "manual"
+      default: "",
     },
     domain: {
       type: String,
-      default: ""
+      default: "",
+      trim: true,
     },
     title: {
       type: String,
-      default: ""
+      default: "",
+      trim: true,
     },
     url: {
       type: String,
-      default: ""
+      default: "",
+      trim: true,
+    },
+    source: {
+      type: String,
+      enum: ["manual", "live-session", "extension"],
+      default: "manual",
     },
     date: {
       type: Date,
-      default: Date.now
-    }
+      default: Date.now,
+    },
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("ScreenTime", screenTimeSchema);
+module.exports =
+  mongoose.models.ScreenTime ||
+  mongoose.model("ScreenTime", screenTimeSchema);

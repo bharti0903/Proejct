@@ -1,42 +1,33 @@
 {
   "name": "digital-addiction-awareness",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Digital Addiction Awareness Tracker with browser extension, analytics, focus mode, alerts, and reports",
+  "main": "app.js",
   "scripts": {
-    "tailwind": "npx tailwindcss -i ./views/input.css -o ./public/Output.css",
-    "tailwind:watch": "npx tailwindcss -i ./views/input.css -o ./public/Output.css --watch",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "tailwind": "npx @tailwindcss/cli -i ./views/input.css -o ./public/Output.css",
+    "tailwind:watch": "npx @tailwindcss/cli -i ./views/input.css -o ./public/Output.css --watch",
     "start": "nodemon app.js",
     "dev": "concurrently \"nodemon app.js\" \"npm run tailwind:watch\""
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/anujSingh-63/digital-addiction-awareness.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/anujSingh-63/digital-addiction-awareness/issues"
-  },
-  "homepage": "https://github.com/anujSingh-63/digital-addiction-awareness#readme",
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "connect-mongo": "^6.0.0",
     "dotenv": "^17.3.1",
     "ejs": "^4.0.1",
-    "express": "^5.2.1",
+    "express": "^5.1.0",
     "express-session": "^1.19.0",
-    "mongoose": "^9.3.1",
-    "socket.io": "^4.8.3"
+    "mongoose": "^8.18.0",
+    "socket.io": "^4.8.1"
   },
   "devDependencies": {
-    "@tailwindcss/cli": "^4.2.2",
-    "autoprefixer": "^10.4.27",
-    "concurrently": "^9.2.1",
-    "nodemon": "^3.1.14",
-    "postcss": "^8.5.8",
-    "tailwindcss": "^4.2.2"
+    "@tailwindcss/cli": "^4.1.13",
+    "autoprefixer": "^10.4.21",
+    "concurrently": "^9.1.2",
+    "nodemon": "^3.1.10",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^4.1.13"
   }
 }

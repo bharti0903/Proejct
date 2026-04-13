@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Challenges</title>
+  <link rel="stylesheet" href="/Output.css">
+</head>
+<body class="bg-slate-50 min-h-screen">
+  <%- include("../partials/navbar") %>
+  <div class="max-w-4xl mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6">Challenges</h1>
+    <div class="space-y-4">
+      <% challenges.forEach(challenge => { %>
+        <div class="bg-white border rounded-xl p-4">
+          <p><strong><%= challenge.title %></strong></p>
+          <p><%= challenge.description %></p>
+          <p>Status: <%= challenge.status %></p>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+  <%- include("../partials/footer") %>
+</body>
+</html>
