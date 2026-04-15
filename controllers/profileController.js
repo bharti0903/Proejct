@@ -123,14 +123,9 @@ const updateProfile = async (req, res) => {
 
     await user.save();
     req.session.userName = user.name;
+    req.session.profileSuccess = "Profile updated successfully";
 
-    return res.render("store/profileSettings", {
-      user,
-      trackingRules,
-      userName: req.session.userName || null,
-      error: null,
-      success: "Profile updated successfully",
-    });
+    return res.redirect("/track-screen-time");
   } catch (error) {
     console.error("UPDATE PROFILE ERROR:", error);
     return res.redirect("/profile-settings");

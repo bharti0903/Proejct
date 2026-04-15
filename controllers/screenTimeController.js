@@ -61,6 +61,9 @@ const getTrackPage = async (req, res) => {
       return res.redirect("/login");
     }
 
+    const successMessage = req.session.profileSuccess || null;
+    req.session.profileSuccess = null;
+
     const entries = await ScreenTime.find({ user: req.session.userId }).sort({
       createdAt: -1,
     });
@@ -99,7 +102,7 @@ const getTrackPage = async (req, res) => {
       todayEntries: stats.todayEntries,
       editEntry: null,
       error: null,
-      success: null,
+      success: successMessage,
       userName: req.session.userName || null,
       userId: req.session.userId,
       todayTotal: Number(stats.todayTotal.toFixed(4)),

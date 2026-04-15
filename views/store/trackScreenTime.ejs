@@ -28,6 +28,18 @@
       <p class="text-slate-600">Track live sessions and manual entries.</p>
     </div>
 
+    <% if (error) { %>
+      <div class="mb-4 p-4 rounded-lg bg-red-100 text-red-700 border border-red-200">
+        <%= error %>
+      </div>
+    <% } %>
+
+    <% if (success) { %>
+      <div class="mb-4 p-4 rounded-lg bg-green-100 text-green-700 border border-green-200">
+        <%= success %>
+      </div>
+    <% } %>
+
     <div id="thresholdPopup" class="hidden fixed top-6 right-6 z-50 max-w-sm rounded-2xl shadow-2xl border px-5 py-4 text-white"></div>
 
     <div class="grid md:grid-cols-4 gap-4 mb-8">
@@ -90,17 +102,25 @@
           <option value="Other" <%= editEntry && editEntry.category === 'Other' ? 'selected' : '' %>>Other</option>
         </select>
 
-        <input type="number" step="0.1" min="0" max="24"
-               name="hours"
-               value="<%= editEntry ? editEntry.hours : '' %>"
-               class="border rounded-lg px-4 py-3"
-               placeholder="Enter hours (e.g. 1.5)"
-               required>
+        <input
+          type="number"
+          step="0.1"
+          min="0"
+          max="24"
+          name="hours"
+          value="<%= editEntry ? editEntry.hours : '' %>"
+          class="border rounded-lg px-4 py-3"
+          placeholder="Enter hours (e.g. 1.5)"
+          required
+        >
 
-        <input type="text" name="notes"
-               value="<%= editEntry ? editEntry.notes : '' %>"
-               class="md:col-span-2 border rounded-lg px-4 py-3"
-               placeholder="Optional notes">
+        <input
+          type="text"
+          name="notes"
+          value="<%= editEntry ? editEntry.notes : '' %>"
+          class="md:col-span-2 border rounded-lg px-4 py-3"
+          placeholder="Optional notes"
+        >
 
         <div class="md:col-span-2 flex gap-3">
           <button class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold">
@@ -144,232 +164,222 @@
   <%- include("../partials/footer") %>
   <%- include("../partials/toast", { userId }) %>
 
- <script>
-  let timerInterval = null;
-  let elapsedSeconds = 0;
-  let liveWarningShown = false;
-  let liveDangerShown = false;
+  <script>
+    let timerInterval = null;
+    let elapsedSeconds = 0;
+    let liveWarningShown = false;
+    let liveDangerShown = false;
 
-  let currentTodayTotalHours = <%- JSON.stringify(todayTotal) %>;
-  let currentSessionCount = <%- JSON.stringify(sessionCount) %>;
+    let currentTodayTotalHours = <%- JSON.stringify(todayTotal) %>;
+    let currentSessionCount = <%- JSON.stringify(sessionCount) %>;
 
-  const dailyLimit = Number(<%- JSON.stringify(dailyLimit) %>);
-  const warningLimit = Number(<%- JSON.stringify(warningLimit) %>);
-  const dangerLimit = Number(<%- JSON.stringify(dangerLimit) %>);
+    const dailyLimit = Number(<%- JSON.stringify(dailyLimit) %>);
+    const warningLimit = Number(<%- JSON.stringify(warningLimit) %>);
+    const dangerLimit = Number(<%- JSON.stringify(dangerLimit) %>);
 
-  const liveTimer = document.getElementById("liveTimer");
-  const startBtn = document.getElementById("startBtn");
-  const stopBtn = document.getElementById("stopBtn");
-  const todayTotalCard = document.getElementById("todayTotalCard");
-  const timeLeftCard = document.getElementById("timeLeftCard");
-  const sessionCountCard = document.getElementById("sessionCountCard");
-  const usageStatusCard = document.getElementById("usageStatusCard");
-  const liveSessionHint = document.getElementById("liveSessionHint");
-  const thresholdPopup = document.getElementById("thresholdPopup");
-  const recentEntriesList = document.getElementById("recentEntriesList");
+    const liveTimer = document.getElementById("liveTimer");
+    const startBtn = document.getElementById("startBtn");
+    const stopBtn = document.getElementById("stopBtn");
+    const todayTotalCard = document.getElementById("todayTotalCard");
+    const timeLeftCard = document.getElementById("timeLeftCard");
+    const sessionCountCard = document.getElementById("sessionCountCard");
+    const usageStatusCard = document.getElementById("usageStatusCard");
+    const liveSessionHint = document.getElementById("liveSessionHint");
+    const thresholdPopup = document.getElementById("thresholdPopup");
+    const recentEntriesList = document.getElementById("recentEntriesList");
 
-  function formatClock(totalSeconds) {
-    const hrs = String(Math.floor(totalSeconds / 3600)).padStart(2, "0");
-    const mins = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, "0");
-    const secs = String(totalSeconds % 60).padStart(2, "0");
-    return `${hrs}:${mins}:${secs}`;
-  }
-
-  function formatDuration(hours) {
-    const totalMinutes = Math.round((Number(hours) || 0) * 60);
-    const hrs = Math.floor(totalMinutes / 60);
-    const mins = totalMinutes % 60;
-
-    if (hrs === 0) return `${mins} min`;
-    if (mins === 0) return `${hrs} hr`;
-    return `${hrs} hr ${mins} min`;
-  }
-
-  function getUsageStatus(totalHours) {
-    if (totalHours >= dangerLimit) return "Limit Reached";
-    if (totalHours >= warningLimit) return "Approaching Limit";
-    return "Healthy";
-  }
-
-  function renderStats(totalHours, sessionCountValue, usageStatusOverride = null, timeLeftOverride = null) {
-    const computedTimeLeft = Math.max(dailyLimit - totalHours, 0);
-    const timeLeftValue = timeLeftOverride !== null ? Number(timeLeftOverride) : computedTimeLeft;
-
-    todayTotalCard.textContent = formatDuration(totalHours);
-    timeLeftCard.textContent = formatDuration(timeLeftValue);
-    sessionCountCard.textContent = String(sessionCountValue);
-    usageStatusCard.textContent = usageStatusOverride || getUsageStatus(totalHours);
-  }
-
-  function showPopup(message, type) {
-    console.log("POPUP:", type, message);
-
-    thresholdPopup.classList.remove("hidden");
-    thresholdPopup.textContent = message;
-
-    thresholdPopup.style.position = "fixed";
-    thresholdPopup.style.top = "24px";
-    thresholdPopup.style.right = "24px";
-    thresholdPopup.style.zIndex = "99999";
-    thresholdPopup.style.maxWidth = "360px";
-    thresholdPopup.style.padding = "16px 20px";
-    thresholdPopup.style.borderRadius = "16px";
-    thresholdPopup.style.color = "white";
-    thresholdPopup.style.fontWeight = "700";
-    thresholdPopup.style.boxShadow = "0 10px 30px rgba(0,0,0,0.25)";
-    thresholdPopup.style.border = "1px solid transparent";
-
-    if (type === "warning") {
-      thresholdPopup.style.background = "#f59e0b";
-      thresholdPopup.style.borderColor = "#d97706";
-    } else if (type === "danger") {
-      thresholdPopup.style.background = "#dc2626";
-      thresholdPopup.style.borderColor = "#b91c1c";
-    } else {
-      thresholdPopup.style.background = "#2563eb";
-      thresholdPopup.style.borderColor = "#1d4ed8";
+    function formatClock(totalSeconds) {
+      const hrs = String(Math.floor(totalSeconds / 3600)).padStart(2, "0");
+      const mins = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, "0");
+      const secs = String(totalSeconds % 60).padStart(2, "0");
+      return `${hrs}:${mins}:${secs}`;
     }
 
-    clearTimeout(window.__thresholdPopupTimer);
-    window.__thresholdPopupTimer = setTimeout(() => {
-      thresholdPopup.classList.add("hidden");
-    }, 4500);
-  }
+    function formatDuration(hours) {
+      const totalMinutes = Math.round((Number(hours) || 0) * 60);
+      const hrs = Math.floor(totalMinutes / 60);
+      const mins = totalMinutes % 60;
 
-  function prependNewEntry(entry) {
-    const item = document.createElement("div");
-    item.className = "border rounded-xl p-4";
-    item.innerHTML = `
-      <p><strong>Category:</strong> ${entry.category || "N/A"}</p>
-      <p><strong>Time:</strong> ${formatDuration(entry.hours || 0)}</p>
-      <p><strong>Source:</strong> ${entry.source || "live-session"}</p>
-      <p><strong>Domain:</strong> ${entry.domain || "N/A"}</p>
-      <p><strong>Title:</strong> ${entry.title || "N/A"}</p>
-      <p><strong>Notes:</strong> ${entry.notes || "No notes"}</p>
-    `;
-    recentEntriesList.prepend(item);
-  }
+      if (hrs === 0) return `${mins} min`;
+      if (mins === 0) return `${hrs} hr`;
+      return `${hrs} hr ${mins} min`;
+    }
 
-  function checkThresholds(totalHours) {
-    console.log("THRESHOLD CHECK:", {
-      totalHours,
-      warningLimit,
-      dangerLimit
+    function getUsageStatus(totalHours) {
+      if (totalHours >= dangerLimit) return "Limit Reached";
+      if (totalHours >= warningLimit) return "Approaching Limit";
+      return "Healthy";
+    }
+
+    function renderStats(totalHours, sessionCountValue, usageStatusOverride = null, timeLeftOverride = null) {
+      const computedTimeLeft = Math.max(dailyLimit - totalHours, 0);
+      const timeLeftValue = timeLeftOverride !== null ? Number(timeLeftOverride) : computedTimeLeft;
+
+      todayTotalCard.textContent = formatDuration(totalHours);
+      timeLeftCard.textContent = formatDuration(timeLeftValue);
+      sessionCountCard.textContent = String(sessionCountValue);
+      usageStatusCard.textContent = usageStatusOverride || getUsageStatus(totalHours);
+    }
+
+    function showPopup(message, type) {
+      thresholdPopup.classList.remove("hidden");
+      thresholdPopup.textContent = message;
+
+      thresholdPopup.style.position = "fixed";
+      thresholdPopup.style.top = "24px";
+      thresholdPopup.style.right = "24px";
+      thresholdPopup.style.zIndex = "99999";
+      thresholdPopup.style.maxWidth = "360px";
+      thresholdPopup.style.padding = "16px 20px";
+      thresholdPopup.style.borderRadius = "16px";
+      thresholdPopup.style.color = "white";
+      thresholdPopup.style.fontWeight = "700";
+      thresholdPopup.style.boxShadow = "0 10px 30px rgba(0,0,0,0.25)";
+      thresholdPopup.style.border = "1px solid transparent";
+
+      if (type === "warning") {
+        thresholdPopup.style.background = "#f59e0b";
+        thresholdPopup.style.borderColor = "#d97706";
+      } else if (type === "danger") {
+        thresholdPopup.style.background = "#dc2626";
+        thresholdPopup.style.borderColor = "#b91c1c";
+      } else {
+        thresholdPopup.style.background = "#2563eb";
+        thresholdPopup.style.borderColor = "#1d4ed8";
+      }
+
+      clearTimeout(window.__thresholdPopupTimer);
+      window.__thresholdPopupTimer = setTimeout(() => {
+        thresholdPopup.classList.add("hidden");
+      }, 4500);
+    }
+
+    function prependNewEntry(entry) {
+      const item = document.createElement("div");
+      item.className = "border rounded-xl p-4";
+      item.innerHTML = `
+        <p><strong>Category:</strong> ${entry.category || "N/A"}</p>
+        <p><strong>Time:</strong> ${formatDuration(entry.hours || 0)}</p>
+        <p><strong>Source:</strong> ${entry.source || "live-session"}</p>
+        <p><strong>Domain:</strong> ${entry.domain || "N/A"}</p>
+        <p><strong>Title:</strong> ${entry.title || "N/A"}</p>
+        <p><strong>Notes:</strong> ${entry.notes || "No notes"}</p>
+      `;
+      recentEntriesList.prepend(item);
+    }
+
+    function checkThresholds(totalHours) {
+      if (!liveDangerShown && totalHours >= dangerLimit) {
+        liveDangerShown = true;
+        showPopup("Danger: You have crossed your danger threshold.", "danger");
+        return;
+      }
+
+      if (!liveWarningShown && totalHours >= warningLimit && totalHours < dangerLimit) {
+        liveWarningShown = true;
+        showPopup("Warning: You have reached your warning threshold.", "warning");
+      }
+    }
+
+    function updateLiveCards() {
+      const currentSessionHours = elapsedSeconds / 3600;
+      const estimatedTodayTotal = currentTodayTotalHours + currentSessionHours;
+      const estimatedTimeLeft = Math.max(dailyLimit - estimatedTodayTotal, 0);
+
+      renderStats(
+        estimatedTodayTotal,
+        currentSessionCount,
+        getUsageStatus(estimatedTodayTotal),
+        estimatedTimeLeft
+      );
+
+      checkThresholds(estimatedTodayTotal);
+    }
+
+    startBtn.addEventListener("click", () => {
+      if (timerInterval) return;
+
+      elapsedSeconds = 0;
+      liveWarningShown = false;
+      liveDangerShown = false;
+      liveTimer.textContent = "00:00:00";
+      liveSessionHint.textContent = "Live stats are updating...";
+      startBtn.disabled = true;
+      stopBtn.disabled = false;
+
+      checkThresholds(currentTodayTotalHours);
+
+      timerInterval = setInterval(() => {
+        elapsedSeconds++;
+        liveTimer.textContent = formatClock(elapsedSeconds);
+        updateLiveCards();
+      }, 1000);
     });
 
-    if (!liveDangerShown && totalHours >= dangerLimit) {
-      liveDangerShown = true;
-      showPopup("Danger: You have crossed your danger threshold.", "danger");
-      return;
-    }
+    stopBtn.addEventListener("click", async () => {
+      if (!timerInterval) return;
 
-    if (!liveWarningShown && totalHours >= warningLimit && totalHours < dangerLimit) {
-      liveWarningShown = true;
-      showPopup("Warning: You have reached your warning threshold.", "warning");
-    }
-  }
+      clearInterval(timerInterval);
+      timerInterval = null;
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+      liveSessionHint.textContent = "Saving session...";
 
-  function updateLiveCards() {
-    const currentSessionHours = elapsedSeconds / 3600;
-    const estimatedTodayTotal = currentTodayTotalHours + currentSessionHours;
-    const estimatedTimeLeft = Math.max(dailyLimit - estimatedTodayTotal, 0);
+      try {
+        const response = await fetch("/track-screen-time/session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            category: document.getElementById("sessionCategory").value,
+            minutes: elapsedSeconds / 60,
+            notes: document.getElementById("sessionNotes").value
+          })
+        });
 
-    renderStats(
-      estimatedTodayTotal,
-      currentSessionCount,
-      getUsageStatus(estimatedTodayTotal),
-      estimatedTimeLeft
-    );
+        const data = await response.json();
 
-    checkThresholds(estimatedTodayTotal);
-  }
+        if (data.success) {
+          if (data.alert) {
+            currentTodayTotalHours = Number(data.alert.todayTotal || currentTodayTotalHours);
+            currentSessionCount = Number(data.alert.sessionCount || (currentSessionCount + 1));
 
-  startBtn.addEventListener("click", () => {
-    if (timerInterval) return;
+            renderStats(
+              currentTodayTotalHours,
+              currentSessionCount,
+              data.alert.usageStatus || getUsageStatus(currentTodayTotalHours),
+              Number(data.alert.timeLeft || Math.max(dailyLimit - currentTodayTotalHours, 0))
+            );
 
-    elapsedSeconds = 0;
-    liveWarningShown = false;
-    liveDangerShown = false;
-    liveTimer.textContent = "00:00:00";
-    liveSessionHint.textContent = "Live stats are updating...";
-    startBtn.disabled = true;
-    stopBtn.disabled = false;
-
-    // immediate check in case user is already very close
-    checkThresholds(currentTodayTotalHours);
-
-    timerInterval = setInterval(() => {
-      elapsedSeconds++;
-      liveTimer.textContent = formatClock(elapsedSeconds);
-      updateLiveCards();
-    }, 1000);
-  });
-
-  stopBtn.addEventListener("click", async () => {
-    if (!timerInterval) return;
-
-    clearInterval(timerInterval);
-    timerInterval = null;
-    startBtn.disabled = false;
-    stopBtn.disabled = true;
-    liveSessionHint.textContent = "Saving session...";
-
-    try {
-      const response = await fetch("/track-screen-time/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          category: document.getElementById("sessionCategory").value,
-          minutes: elapsedSeconds / 60,
-          notes: document.getElementById("sessionNotes").value
-        })
-      });
-
-      const data = await response.json();
-      console.log("SAVE RESPONSE:", data);
-
-      if (data.success) {
-        if (data.alert) {
-          currentTodayTotalHours = Number(data.alert.todayTotal || currentTodayTotalHours);
-          currentSessionCount = Number(data.alert.sessionCount || (currentSessionCount + 1));
-
-          renderStats(
-            currentTodayTotalHours,
-            currentSessionCount,
-            data.alert.usageStatus || getUsageStatus(currentTodayTotalHours),
-            Number(data.alert.timeLeft || Math.max(dailyLimit - currentTodayTotalHours, 0))
-          );
-
-          if (data.alert.dangerTriggered) {
-            showPopup("Danger: You have crossed your danger threshold.", "danger");
-          } else if (data.alert.warningTriggered) {
-            showPopup("Warning: You have reached your warning threshold.", "warning");
+            if (data.alert.dangerTriggered) {
+              showPopup("Danger: You have crossed your danger threshold.", "danger");
+            } else if (data.alert.warningTriggered) {
+              showPopup("Warning: You have reached your warning threshold.", "warning");
+            } else {
+              showPopup("Session saved successfully.", "info");
+            }
           } else {
+            currentTodayTotalHours += Number(data.entry?.hours || 0);
+            currentSessionCount += 1;
+            renderStats(currentTodayTotalHours, currentSessionCount);
             showPopup("Session saved successfully.", "info");
           }
-        } else {
-          currentTodayTotalHours += Number(data.entry?.hours || 0);
-          currentSessionCount += 1;
-          renderStats(currentTodayTotalHours, currentSessionCount);
-          showPopup("Session saved successfully.", "info");
-        }
 
-        prependNewEntry(data.entry);
-        liveSessionHint.textContent = "Session saved. Start a new one anytime.";
-        liveTimer.textContent = "00:00:00";
-        elapsedSeconds = 0;
-        document.getElementById("sessionNotes").value = "";
-      } else {
-        renderStats(currentTodayTotalHours, currentSessionCount);
-        showPopup(data.message || "Failed to save session.", "danger");
+          prependNewEntry(data.entry);
+          liveSessionHint.textContent = "Session saved. Start a new one anytime.";
+          liveTimer.textContent = "00:00:00";
+          elapsedSeconds = 0;
+          document.getElementById("sessionNotes").value = "";
+        } else {
+          renderStats(currentTodayTotalHours, currentSessionCount);
+          showPopup(data.message || "Failed to save session.", "danger");
+          liveSessionHint.textContent = "Could not save session.";
+        }
+      } catch (error) {
+        console.error("SAVE ERROR:", error);
+        showPopup("Something went wrong while saving the session.", "danger");
         liveSessionHint.textContent = "Could not save session.";
       }
-    } catch (error) {
-      console.error("SAVE ERROR:", error);
-      showPopup("Something went wrong while saving the session.", "danger");
-      liveSessionHint.textContent = "Could not save session.";
-    }
-  });
-</script>
+    });
+  </script>
 </body>
 </html>
