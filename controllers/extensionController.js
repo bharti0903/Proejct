@@ -24,10 +24,37 @@ const defaultCategorize = (domain = "", title = "") => {
   const d = String(domain).toLowerCase();
   const t = String(title).toLowerCase();
 
-  if (d.includes("youtube") || d.includes("netflix") || d.includes("spotify")) return "Entertainment";
-  if (d.includes("instagram") || d.includes("facebook") || d.includes("x.com") || d.includes("reddit")) return "Social Media";
-  if (d.includes("leetcode") || d.includes("geeksforgeeks") || d.includes("coursera") || d.includes("openai.com") || t.includes("tutorial")) return "Study";
-  if (d.includes("steam") || d.includes("roblox")) return "Gaming";
+  if (
+    d.includes("youtube") ||
+    d.includes("netflix") ||
+    d.includes("spotify")
+  ) {
+    return "Entertainment";
+  }
+
+  if (
+    d.includes("instagram") ||
+    d.includes("facebook") ||
+    d.includes("x.com") ||
+    d.includes("reddit")
+  ) {
+    return "Social Media";
+  }
+
+  if (
+    d.includes("leetcode") ||
+    d.includes("geeksforgeeks") ||
+    d.includes("coursera") ||
+    d.includes("openai.com") ||
+    t.includes("tutorial")
+  ) {
+    return "Study";
+  }
+
+  if (d.includes("steam") || d.includes("roblox")) {
+    return "Gaming";
+  }
+
   return "Other";
 };
 
@@ -47,7 +74,11 @@ const applyCustomRule = async (userId, domain, title, url) => {
     if (rule.matchType === "domain" && d === pattern) return rule.category;
     if (rule.matchType === "url" && u === pattern) return rule.category;
     if (rule.matchType === "title" && t.includes(pattern)) return rule.category;
-    if (rule.matchType === "contains" && (d.includes(pattern) || u.includes(pattern) || t.includes(pattern))) {
+
+    if (
+      rule.matchType === "contains" &&
+      (d.includes(pattern) || u.includes(pattern) || t.includes(pattern))
+    ) {
       return rule.category;
     }
   }
@@ -57,7 +88,14 @@ const applyCustomRule = async (userId, domain, title, url) => {
 
 const createThresholdAlerts = async (userId) => {
   const user = await User.findById(userId);
-  if (!user) return { warningTriggered: false, dangerTriggered: false, todayTotal: 0 };
+
+  if (!user) {
+    return {
+      warningTriggered: false,
+      dangerTriggered: false,
+      todayTotal: 0,
+    };
+  }
 
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
@@ -68,11 +106,14 @@ const createThresholdAlerts = async (userId) => {
   });
 
   const todayTotal = todayEntries.reduce((sum, entry) => sum + entry.hours, 0);
+
   let warningTriggered = false;
   let dangerTriggered = false;
 
   if (todayTotal >= user.warningLimit && todayTotal < user.dangerLimit) {
-    const message = `You reached your warning threshold of ${formatThreshold(user.warningLimit)}.`;
+    const message = `You reached your warning threshold of ${formatThreshold(
+      user.warningLimit
+    )}.`;
 
     const existingWarning = await Alert.findOne({
       user: userId,
@@ -82,18 +123,26 @@ const createThresholdAlerts = async (userId) => {
     });
 
     if (!existingWarning) {
-      const newAlert = await Alert.create({ user: userId, message, type: "warning" });
+      const newAlert = await Alert.create({
+        user: userId,
+        message,
+        type: "warning",
+      });
+
       safeEmit(`user_${userId}`, "newAlert", {
         id: newAlert._id,
         type: newAlert.type,
         message: newAlert.message,
       });
+
       warningTriggered = true;
     }
   }
 
   if (todayTotal >= user.dangerLimit) {
-    const message = `You reached your danger threshold of ${formatThreshold(user.dangerLimit)}.`;
+    const message = `You reached your danger threshold of ${formatThreshold(
+      user.dangerLimit
+    )}.`;
 
     const existingDanger = await Alert.findOne({
       user: userId,
@@ -103,17 +152,27 @@ const createThresholdAlerts = async (userId) => {
     });
 
     if (!existingDanger) {
-      const newAlert = await Alert.create({ user: userId, message, type: "danger" });
+      const newAlert = await Alert.create({
+        user: userId,
+        message,
+        type: "danger",
+      });
+
       safeEmit(`user_${userId}`, "newAlert", {
         id: newAlert._id,
         type: newAlert.type,
         message: newAlert.message,
       });
+
       dangerTriggered = true;
     }
   }
 
-  return { warningTriggered, dangerTriggered, todayTotal };
+  return {
+    warningTriggered,
+    dangerTriggered,
+    todayTotal,
+  };
 };
 
 const getUserByToken = async (req) => {
@@ -132,6 +191,7 @@ const getExtensionBootstrap = async (req, res) => {
     }
 
     const user = await User.findById(req.session.userId);
+
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -139,9 +199,12 @@ const getExtensionBootstrap = async (req, res) => {
       });
     }
 
+    const protocol = req.protocol;
+    const host = req.get("host");
+
     return res.json({
       success: true,
-      backendUrl: `http://localhost:${process.env.PORT || 5002}`,
+      backendUrl: `${protocol}://${host}`,
       extensionToken: user.extensionToken,
       user: {
         id: user._id,
@@ -227,6 +290,7 @@ const saveExtensionData = async (req, res) => {
 const getExtensionTodaySummary = async (req, res) => {
   try {
     const user = await getUserByToken(req);
+
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -271,6 +335,7 @@ const getExtensionTodaySummary = async (req, res) => {
     });
 
     let usageStatus = "Healthy";
+
     if (todayTotal >= user.warningLimit && todayTotal < user.dangerLimit) {
       usageStatus = "Approaching Limit";
     } else if (todayTotal >= user.dangerLimit) {

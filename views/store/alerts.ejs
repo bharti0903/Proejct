@@ -1,24 +1,267 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Alerts</title>
-  <link rel="stylesheet" href="/Output.css">
+  <link rel="stylesheet" href="/Output.css" />
 </head>
-<body class="bg-slate-50 min-h-screen">
+
+<body class="min-h-screen bg-slate-950 text-slate-100">
   <%- include("../partials/navbar") %>
-  <div class="max-w-4xl mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold mb-6">Alerts</h1>
-    <div class="space-y-4">
-      <% alerts.forEach(alert => { %>
-        <div class="bg-white border rounded-xl p-4">
-          <p><strong><%= alert.type %></strong></p>
-          <p><%= alert.message %></p>
-          <p class="text-sm text-slate-500"><%= new Date(alert.createdAt).toLocaleString() %></p>
+
+  <%
+    function getAlertTheme(type, isRead) {
+      const t = String(type || "").toLowerCase();
+
+      if (t === "danger") {
+        return {
+          badge: "bg-rose-500/15 text-rose-300 border border-rose-400/20",
+          iconBg: "from-rose-500/20 to-red-500/20",
+          icon: "⚠",
+          glow: "bg-rose-500/10",
+          title: "Danger Alert",
+          opacity: isRead ? "opacity-60" : ""
+        };
+      }
+
+      if (t === "warning") {
+        return {
+          badge: "bg-amber-500/15 text-amber-300 border border-amber-400/20",
+          iconBg: "from-amber-500/20 to-orange-500/20",
+          icon: "⏰",
+          glow: "bg-amber-500/10",
+          title: "Warning Alert",
+          opacity: isRead ? "opacity-60" : ""
+        };
+      }
+
+      return {
+        badge: "bg-cyan-500/15 text-cyan-300 border border-cyan-400/20",
+        iconBg: "from-cyan-500/20 to-indigo-500/20",
+        icon: "ℹ",
+        glow: "bg-cyan-500/10",
+        title: "Info Alert",
+        opacity: isRead ? "opacity-60" : ""
+      };
+    }
+
+    const unreadCount = (alerts || []).filter(alert => !alert.isRead).length;
+    const readCount = (alerts || []).filter(alert => alert.isRead).length;
+  %>
+
+  <div class="max-w-6xl mx-auto px-4 py-8">
+    <div class="relative overflow-hidden rounded-[28px] border border-white/10 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 shadow-2xl mb-8">
+      <div class="absolute -top-16 -left-16 h-56 w-56 rounded-full bg-rose-500/20 blur-3xl"></div>
+      <div class="absolute -bottom-16 -right-16 h-56 w-56 rounded-full bg-cyan-500/20 blur-3xl"></div>
+
+      <div class="relative p-6 md:p-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <p class="text-sm uppercase tracking-[0.25em] text-rose-300/80 mb-2">Notifications Center</p>
+          <h1 class="text-3xl md:text-4xl font-extrabold text-white">Alerts</h1>
+          <p class="text-slate-300 mt-3 max-w-2xl">
+            View your warning and danger notifications, track unread alerts, and manage your notification history.
+          </p>
+        </div>
+
+        <button
+          id="markAllReadBtn"
+          type="button"
+          class="rounded-2xl bg-gradient-to-r from-cyan-500 to-indigo-600 px-5 py-3 text-white font-semibold shadow-lg shadow-cyan-900/30 hover:scale-[1.02] transition"
+        >
+          Mark All Read
+        </button>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-4 gap-4 mb-8">
+      <div class="rounded-3xl border border-white/10 bg-slate-900/70 p-5 shadow-xl backdrop-blur">
+        <p class="text-sm text-slate-400">Total Alerts</p>
+        <p class="text-3xl font-bold text-white mt-2"><%= alerts.length %></p>
+      </div>
+
+      <div class="rounded-3xl border border-white/10 bg-slate-900/70 p-5 shadow-xl backdrop-blur">
+        <p class="text-sm text-slate-400">Unread</p>
+        <p id="unreadCountText" class="text-3xl font-bold text-cyan-300 mt-2"><%= unreadCount %></p>
+      </div>
+
+      <div class="rounded-3xl border border-white/10 bg-slate-900/70 p-5 shadow-xl backdrop-blur">
+        <p class="text-sm text-slate-400">Read</p>
+        <p id="readCountText" class="text-3xl font-bold text-slate-300 mt-2"><%= readCount %></p>
+      </div>
+
+      <div class="rounded-3xl border border-white/10 bg-slate-900/70 p-5 shadow-xl backdrop-blur">
+        <p class="text-sm text-slate-400">Danger Alerts</p>
+        <p class="text-3xl font-bold text-rose-300 mt-2">
+          <%= alerts.filter(a => String(a.type).toLowerCase() === "danger").length %>
+        </p>
+      </div>
+    </div>
+
+    <div id="alertsList" class="space-y-5">
+      <% if (!alerts || alerts.length === 0) { %>
+        <div class="rounded-3xl border border-dashed border-white/10 bg-slate-900/70 p-10 text-center text-slate-400 shadow-xl backdrop-blur">
+          No alerts yet. Once your warning or danger threshold is reached, they will appear here.
+        </div>
+      <% } %>
+
+      <% alerts.forEach(alert => { 
+           const theme = getAlertTheme(alert.type, alert.isRead);
+      %>
+        <div
+          class="alert-item relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/70 p-5 shadow-xl backdrop-blur <%= theme.opacity %>"
+          data-id="<%= alert._id %>"
+          data-read="<%= alert.isRead ? 'true' : 'false' %>"
+        >
+          <div class="absolute -top-10 -left-10 h-28 w-28 rounded-full <%= theme.glow %> blur-2xl"></div>
+
+          <div class="relative flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+            <div class="flex items-start gap-4">
+              <div class="h-14 w-14 rounded-2xl bg-gradient-to-br <%= theme.iconBg %> border border-white/10 flex items-center justify-center text-2xl">
+                <%= theme.icon %>
+              </div>
+
+              <div>
+                <div class="flex flex-wrap items-center gap-3 mb-2">
+                  <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide <%= theme.badge %>">
+                    <%= theme.title %>
+                  </span>
+
+                  <% if (alert.isRead) { %>
+                    <span class="inline-flex items-center rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wide bg-white/5 text-slate-300 border border-white/10">
+                      Read
+                    </span>
+                  <% } else { %>
+                    <span class="inline-flex items-center rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wide bg-cyan-500/15 text-cyan-300 border border-cyan-400/20">
+                      Unread
+                    </span>
+                  <% } %>
+
+                  <span class="text-xs text-slate-500">
+                    <%= new Date(alert.createdAt).toLocaleString() %>
+                  </span>
+                </div>
+
+                <p class="text-lg font-semibold text-white">
+                  <%= alert.message %>
+                </p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+              <% if (!alert.isRead) { %>
+                <button
+                  type="button"
+                  class="mark-read-btn rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 px-4 py-2 text-white text-sm font-semibold"
+                  data-id="<%= alert._id %>"
+                >
+                  Mark Read
+                </button>
+              <% } %>
+
+              <div class="text-sm text-slate-400 md:text-right">
+                Type:
+                <span class="<%= String(alert.type).toLowerCase() === 'danger' ? 'text-rose-300' : String(alert.type).toLowerCase() === 'warning' ? 'text-amber-300' : 'text-cyan-300' %> font-semibold">
+                  <%= alert.type %>
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       <% }) %>
     </div>
   </div>
+
   <%- include("../partials/footer") %>
+  <%- include("../partials/toast", { userId }) %>
+
+  <script>
+    const alertsList = document.getElementById("alertsList");
+    const markAllReadBtn = document.getElementById("markAllReadBtn");
+    const unreadCountText = document.getElementById("unreadCountText");
+    const readCountText = document.getElementById("readCountText");
+
+    function refreshCounts() {
+      const alertItems = Array.from(document.querySelectorAll(".alert-item"));
+      const unread = alertItems.filter(item => item.dataset.read === "false").length;
+      const read = alertItems.filter(item => item.dataset.read === "true").length;
+
+      unreadCountText.textContent = unread;
+      readCountText.textContent = read;
+    }
+
+    async function markAlertRead(id) {
+      try {
+        const response = await fetch(`/alerts/api/${id}/read`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        const data = await response.json();
+        if (!data.success) return;
+
+        const item = document.querySelector(`.alert-item[data-id="${id}"]`);
+        if (!item) return;
+
+        item.dataset.read = "true";
+        item.classList.add("opacity-60");
+
+        const unreadBadge = item.querySelector(".bg-cyan-500\\/15.text-cyan-300.border-cyan-400\\/20");
+        if (unreadBadge) {
+          unreadBadge.className = "inline-flex items-center rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wide bg-white/5 text-slate-300 border border-white/10";
+          unreadBadge.textContent = "Read";
+        }
+
+        const btn = item.querySelector(".mark-read-btn");
+        if (btn) btn.remove();
+
+        refreshCounts();
+      } catch (error) {
+        console.error("markAlertRead error:", error);
+      }
+    }
+
+    async function markAllRead() {
+      try {
+        const response = await fetch("/alerts/api/read-all", {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        const data = await response.json();
+        if (!data.success) return;
+
+        document.querySelectorAll(".alert-item").forEach((item) => {
+          item.dataset.read = "true";
+          item.classList.add("opacity-60");
+
+          const btn = item.querySelector(".mark-read-btn");
+          if (btn) btn.remove();
+        });
+
+        document.querySelectorAll(".inline-flex.items-center.rounded-full.px-3.py-1.text-\\[11px\\].font-bold.uppercase.tracking-wide.bg-cyan-500\\/15.text-cyan-300.border.border-cyan-400\\/20").forEach((badge) => {
+          badge.className = "inline-flex items-center rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wide bg-white/5 text-slate-300 border border-white/10";
+          badge.textContent = "Read";
+        });
+
+        refreshCounts();
+      } catch (error) {
+        console.error("markAllRead error:", error);
+      }
+    }
+
+    document.querySelectorAll(".mark-read-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        markAlertRead(btn.dataset.id);
+      });
+    });
+
+    if (markAllReadBtn) {
+      markAllReadBtn.addEventListener("click", markAllRead);
+    }
+  </script>
 </body>
 </html>

@@ -7,7 +7,8 @@
   <link rel="stylesheet" href="/Output.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body class="bg-slate-50 min-h-screen text-slate-800">
+
+<body class="bg-slate-950 min-h-screen text-slate-100">
   <%- include("../partials/navbar") %>
 
   <%
@@ -23,119 +24,134 @@
   %>
 
   <div class="max-w-7xl mx-auto px-4 py-8">
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-      <div>
-        <h1 class="text-3xl font-bold text-slate-900">Weekly Report</h1>
-        <p class="text-slate-600">Last 7 days summary.</p>
-      </div>
 
-      <a href="/weekly-report/export-csv" class="px-5 py-3 rounded-xl bg-blue-600 text-white font-semibold">
-        Download CSV
-      </a>
+    <!-- HERO -->
+    <div class="relative overflow-hidden rounded-[28px] border border-white/10 bg-gradient-to-br from-slate-900 to-slate-950 p-8 mb-8 shadow-2xl">
+      <div class="absolute -top-16 -left-16 h-56 w-56 bg-indigo-500/20 blur-3xl rounded-full"></div>
+      <div class="absolute -bottom-16 -right-16 h-56 w-56 bg-cyan-500/20 blur-3xl rounded-full"></div>
+
+      <div class="relative flex justify-between items-center flex-wrap gap-4">
+        <div>
+          <h1 class="text-3xl md:text-4xl font-extrabold text-white">Weekly Report</h1>
+          <p class="text-slate-400 mt-2">Your digital usage insights (last 7 days)</p>
+        </div>
+
+        <a href="/weekly-report/export-csv"
+           class="px-5 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-600 text-white font-semibold shadow-lg">
+          Download CSV
+        </a>
+      </div>
     </div>
 
+    <!-- STATS -->
     <div class="grid md:grid-cols-2 xl:grid-cols-5 gap-4 mb-8">
-      <div class="bg-white p-5 rounded-2xl shadow border">
-        <p class="text-sm text-slate-500">Weekly Total</p>
-        <p class="text-2xl font-bold"><%= formatDuration(weeklyTotal) %></p>
-      </div>
+      <% [
+        ["Weekly Total", formatDuration(weeklyTotal)],
+        ["Daily Average", formatDuration(weeklyAverage)],
+        ["Score", productivityScore + "/100"],
+        ["Level", productivityLabel],
+        ["Top Category", topCategory]
+      ].forEach(item => { %>
 
-      <div class="bg-white p-5 rounded-2xl shadow border">
-        <p class="text-sm text-slate-500">Daily Average</p>
-        <p class="text-2xl font-bold"><%= formatDuration(weeklyAverage) %></p>
-      </div>
+        <div class="bg-slate-900/70 border border-white/10 rounded-3xl p-5 shadow-xl backdrop-blur">
+          <p class="text-sm text-slate-400"><%= item[0] %></p>
+          <p class="text-2xl font-bold text-white mt-2"><%= item[1] %></p>
+        </div>
 
-      <div class="bg-white p-5 rounded-2xl shadow border">
-        <p class="text-sm text-slate-500">Productivity Score</p>
-        <p class="text-2xl font-bold"><%= productivityScore %>/100</p>
-      </div>
-
-      <div class="bg-white p-5 rounded-2xl shadow border">
-        <p class="text-sm text-slate-500">Level</p>
-        <p class="text-2xl font-bold"><%= productivityLabel %></p>
-      </div>
-
-      <div class="bg-white p-5 rounded-2xl shadow border">
-        <p class="text-sm text-slate-500">Top Category</p>
-        <p class="text-2xl font-bold"><%= topCategory %></p>
-      </div>
+      <% }) %>
     </div>
 
+    <!-- CHARTS -->
     <div class="grid xl:grid-cols-2 gap-8 mb-8">
-      <div class="bg-white rounded-2xl shadow border p-6">
-        <h2 class="text-2xl font-bold mb-4">Usage Trend</h2>
-        <canvas id="weeklyReportChart"></canvas>
+
+      <!-- LINE -->
+      <div class="bg-slate-900/70 border border-white/10 rounded-3xl p-6 shadow-xl">
+        <h2 class="text-xl font-bold mb-4">Usage Trend</h2>
+        <canvas id="lineChart"></canvas>
       </div>
 
-      <div class="bg-white rounded-2xl shadow border p-6">
-        <h2 class="text-2xl font-bold mb-4">Top Websites</h2>
-
-        <% if (topWebsites && topWebsites.length > 0) { %>
-          <div class="space-y-4">
-            <% topWebsites.forEach((site, index) => { %>
-              <div class="border rounded-xl p-4">
-                <p class="font-bold">#<%= index + 1 %> <%= site.domain %></p>
-                <p><strong>Total Time:</strong> <%= formatDuration(site.totalHours) %></p>
-                <p><strong>Visits:</strong> <%= site.visits %></p>
-              </div>
-            <% }) %>
-          </div>
-        <% } else { %>
-          <p class="text-slate-500">No website activity found.</p>
-        <% } %>
+      <!-- PIE -->
+      <div class="bg-slate-900/70 border border-white/10 rounded-3xl p-6 shadow-xl">
+        <h2 class="text-xl font-bold mb-4">Top Websites (Distribution)</h2>
+        <canvas id="pieChart"></canvas>
       </div>
     </div>
 
-    <div class="bg-white rounded-2xl shadow border p-6">
-      <h2 class="text-2xl font-bold mb-4">Daily Breakdown</h2>
-      <div class="overflow-x-auto">
-        <table class="w-full border-collapse">
-          <thead>
-            <tr class="bg-slate-100">
-              <th class="p-3 border text-left">Day</th>
-              <th class="p-3 border text-left">Total Time</th>
-              <th class="p-3 border text-left">Sessions</th>
+    <!-- BAR -->
+    <div class="bg-slate-900/70 border border-white/10 rounded-3xl p-6 shadow-xl mb-8">
+      <h2 class="text-xl font-bold mb-4">Daily Breakdown (Bar)</h2>
+      <canvas id="barChart"></canvas>
+    </div>
+
+    <!-- TABLE -->
+    <div class="bg-slate-900/70 border border-white/10 rounded-3xl p-6 shadow-xl">
+      <h2 class="text-xl font-bold mb-4">Daily Breakdown</h2>
+
+      <table class="w-full text-sm">
+        <thead class="text-slate-400 border-b border-white/10">
+          <tr>
+            <th class="p-3 text-left">Day</th>
+            <th class="p-3 text-left">Time</th>
+            <th class="p-3 text-left">Sessions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% weeklyRows.forEach(row => { %>
+            <tr class="border-b border-white/5">
+              <td class="p-3"><%= row.label %></td>
+              <td class="p-3"><%= formatDuration(row.total) %></td>
+              <td class="p-3"><%= row.sessions %></td>
             </tr>
-          </thead>
-          <tbody>
-            <% weeklyRows.forEach(row => { %>
-              <tr>
-                <td class="p-3 border"><%= row.label %></td>
-                <td class="p-3 border"><%= formatDuration(row.total) %></td>
-                <td class="p-3 border"><%= row.sessions %></td>
-              </tr>
-            <% }) %>
-          </tbody>
-        </table>
-      </div>
+          <% }) %>
+        </tbody>
+      </table>
     </div>
+
   </div>
 
   <%- include("../partials/footer") %>
+  <%- include("../partials/toast", { userId }) %>
 
   <script>
-    const weeklyLabels = <%- weeklyChartLabels %>;
-    const weeklyData = <%- weeklyChartData %>;
-    const ctx = document.getElementById("weeklyReportChart").getContext("2d");
+    const labels = <%- weeklyChartLabels %>;
+    const data = <%- weeklyChartData %>;
 
-    new Chart(ctx, {
+    const topSites = <%- JSON.stringify(topWebsites || []) %>;
+
+    // LINE CHART
+    new Chart(document.getElementById("lineChart"), {
       type: "line",
       data: {
-        labels: weeklyLabels,
-        datasets: [
-          {
-            label: "Hours",
-            data: weeklyData,
-            tension: 0.35,
-            borderWidth: 2
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        scales: {
-          y: { beginAtZero: true }
-        }
+        labels,
+        datasets: [{
+          label: "Hours",
+          data,
+          tension: 0.4
+        }]
+      }
+    });
+
+    // BAR CHART
+    new Chart(document.getElementById("barChart"), {
+      type: "bar",
+      data: {
+        labels,
+        datasets: [{
+          label: "Hours",
+          data
+        }]
+      }
+    });
+
+    // PIE CHART
+    new Chart(document.getElementById("pieChart"), {
+      type: "pie",
+      data: {
+        labels: topSites.map(s => s.domain),
+        datasets: [{
+          data: topSites.map(s => s.totalHours)
+        }]
       }
     });
   </script>

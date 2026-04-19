@@ -6,7 +6,182 @@
     socket.emit("joinUserRoom", "<%= userId %>");
   <% } %>
 
-  socket.on("newAlert", function(alert) {
-    alert(`${alert.type.toUpperCase()}: ${alert.message}`);
+  function ensureToastContainer() {
+    let container = document.getElementById("premium-toast-container");
+    if (!container) {
+      container = document.createElement("div");
+      container.id = "premium-toast-container";
+      container.style.position = "fixed";
+      container.style.top = "20px";
+      container.style.right = "20px";
+      container.style.zIndex = "2147483647";
+      container.style.display = "flex";
+      container.style.flexDirection = "column";
+      container.style.gap = "16px";
+      container.style.width = "min(480px, calc(100vw - 20px))";
+      document.body.appendChild(container);
+    }
+    return container;
+  }
+
+  function injectStyles() {
+    if (document.getElementById("toast-animations")) return;
+
+    const style = document.createElement("style");
+    style.id = "toast-animations";
+
+    style.innerHTML = `
+      @keyframes toastSlideIn {
+        from { transform: translateX(120%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+
+      @keyframes toastSlideOut {
+        to { transform: translateX(120%); opacity: 0; }
+      }
+
+      @keyframes pulseRing {
+        0% { transform: scale(0.9); opacity: 0.6; }
+        70% { transform: scale(1.4); opacity: 0; }
+        100% { transform: scale(1.5); opacity: 0; }
+      }
+    `;
+
+    document.head.appendChild(style);
+  }
+
+  function getTheme(type) {
+    if (type === "danger") {
+      return {
+        title: "Danger Limit Reached",
+        color: "#ef4444",
+        soft: "rgba(239,68,68,0.2)",
+        border: "rgba(248,113,113,0.25)",
+        icon: "⚠"
+      };
+    }
+
+    if (type === "warning") {
+      return {
+        title: "Warning Limit Reached",
+        color: "#f59e0b",
+        soft: "rgba(245,158,11,0.2)",
+        border: "rgba(251,191,36,0.25)",
+        icon: "⏰"
+      };
+    }
+
+    return {
+      title: "Notification",
+      color: "#3b82f6",
+      soft: "rgba(59,130,246,0.2)",
+      border: "rgba(96,165,250,0.25)",
+      icon: "ℹ"
+    };
+  }
+
+  function showToast(type, message) {
+    injectStyles();
+    const container = ensureToastContainer();
+    const theme = getTheme(type);
+
+    const toast = document.createElement("div");
+    toast.style.borderRadius = "24px";
+    toast.style.border = `1px solid ${theme.border}`;
+    toast.style.background = "linear-gradient(135deg, rgba(15,23,42,0.95), rgba(30,41,59,0.9))";
+    toast.style.backdropFilter = "blur(16px)";
+    toast.style.boxShadow = "0 25px 60px rgba(0,0,0,0.5)";
+    toast.style.overflow = "hidden";
+    toast.style.animation = "toastSlideIn 0.4s ease forwards";
+
+    const content = document.createElement("div");
+    content.style.display = "flex";
+    content.style.gap = "16px";
+    content.style.padding = "20px";
+
+    const iconWrap = document.createElement("div");
+    iconWrap.style.position = "relative";
+    iconWrap.style.width = "60px";
+    iconWrap.style.height = "60px";
+
+    const ring = document.createElement("div");
+    ring.style.position = "absolute";
+    ring.style.inset = "0";
+    ring.style.borderRadius = "16px";
+    ring.style.border = `2px solid ${theme.color}`;
+    ring.style.animation = "pulseRing 1.8s infinite";
+
+    const icon = document.createElement("div");
+    icon.textContent = theme.icon;
+    icon.style.width = "60px";
+    icon.style.height = "60px";
+    icon.style.borderRadius = "16px";
+    icon.style.display = "flex";
+    icon.style.alignItems = "center";
+    icon.style.justifyContent = "center";
+    icon.style.background = theme.soft;
+    icon.style.color = "#fff";
+    icon.style.fontSize = "28px";
+
+    iconWrap.appendChild(ring);
+    iconWrap.appendChild(icon);
+
+    const text = document.createElement("div");
+    text.style.flex = "1";
+
+    const title = document.createElement("div");
+    title.textContent = theme.title;
+    title.style.fontSize = "20px";
+    title.style.fontWeight = "800";
+    title.style.color = "#fff";
+
+    const body = document.createElement("div");
+    body.textContent = message;
+    body.style.fontSize = "15px";
+    body.style.color = "#cbd5e1";
+    body.style.marginTop = "6px";
+
+    const close = document.createElement("button");
+    close.innerHTML = "&times;";
+    close.style.fontSize = "26px";
+    close.style.background = "transparent";
+    close.style.border = "none";
+    close.style.color = "#fff";
+    close.style.cursor = "pointer";
+
+    text.appendChild(title);
+    text.appendChild(body);
+
+    content.appendChild(iconWrap);
+    content.appendChild(text);
+    content.appendChild(close);
+
+    const progress = document.createElement("div");
+    progress.style.height = "5px";
+    progress.style.background = theme.color;
+    progress.style.transition = "width 5s linear";
+
+    toast.appendChild(content);
+    toast.appendChild(progress);
+    container.appendChild(toast);
+
+    setTimeout(() => {
+      progress.style.width = "0%";
+    }, 50);
+
+    function remove() {
+      toast.style.animation = "toastSlideOut 0.4s ease forwards";
+      setTimeout(() => toast.remove(), 400);
+    }
+
+    close.onclick = remove;
+    setTimeout(remove, 5000);
+  }
+
+  socket.on("newAlert", function(alertData) {
+    showToast(
+      String(alertData.type || "info").toLowerCase(),
+      alertData.message || "New alert received"
+    );
   });
 </script>

@@ -1,33 +1,35 @@
 {
   "manifest_version": 3,
   "name": "Digital Addiction Awareness Tracker",
-  "version": "3.0.0",
-  "description": "Tracks active browser usage and connects it to backend automatically",
+  "version": "3.2.0",
+  "description": "Tracks browser usage and shows real-time alerts on websites like YouTube",
+
   "permissions": [
     "tabs",
     "storage",
     "alarms",
     "notifications",
-    "idle"
+    "idle",
+    "scripting"
   ],
+
   "host_permissions": [
     "http://localhost:5002/*",
     "<all_urls>"
   ],
+
   "background": {
     "service_worker": "background.js"
   },
-  "options_page": "options.html",
+
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Digital Addiction Awareness Tracker"
+    "default_title": "DAAT Tracker"
   },
+
+  "options_page": "options.html",
+
   "content_scripts": [
-    {
-      "matches": ["http://localhost:5002/*"],
-      "js": ["content.js"],
-      "run_at": "document_idle"
-    },
     {
       "matches": ["<all_urls>"],
       "js": ["content.js"],

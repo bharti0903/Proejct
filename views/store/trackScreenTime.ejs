@@ -6,7 +6,8 @@
   <title>Track Screen Time</title>
   <link rel="stylesheet" href="/Output.css">
 </head>
-<body class="bg-slate-50 min-h-screen text-slate-800">
+
+<body class="bg-slate-950 min-h-screen text-slate-100">
   <%- include("../partials/navbar") %>
 
   <% 
@@ -14,151 +15,95 @@
       const totalMinutes = Math.round((Number(hours) || 0) * 60);
       const hrs = Math.floor(totalMinutes / 60);
       const mins = totalMinutes % 60;
-
       if (hrs === 0) return `${mins} min`;
       if (mins === 0) return `${hrs} hr`;
       return `${hrs} hr ${mins} min`;
     }
   %>
 
-  <div class="max-w-6xl mx-auto px-4 py-8">
-
+  <div class="max-w-7xl mx-auto px-4 py-8">
     <div class="mb-8">
-      <h1 class="text-3xl font-bold text-slate-900">Activity Tracking</h1>
-      <p class="text-slate-600">Track live sessions and manual entries.</p>
+      <h1 class="text-3xl font-extrabold text-white">Activity Tracking</h1>
+      <p class="text-slate-400">Track live sessions and manual entries</p>
     </div>
 
     <% if (error) { %>
-      <div class="mb-4 p-4 rounded-lg bg-red-100 text-red-700 border border-red-200">
+      <div class="mb-4 rounded-2xl border border-rose-400/20 bg-rose-500/10 p-4 text-rose-200">
         <%= error %>
       </div>
     <% } %>
 
     <% if (success) { %>
-      <div class="mb-4 p-4 rounded-lg bg-green-100 text-green-700 border border-green-200">
+      <div class="mb-4 rounded-2xl border border-emerald-400/20 bg-emerald-500/10 p-4 text-emerald-200">
         <%= success %>
       </div>
     <% } %>
 
-    <div id="thresholdPopup" class="hidden fixed top-6 right-6 z-50 max-w-sm rounded-2xl shadow-2xl border px-5 py-4 text-white"></div>
+    <div id="thresholdPopup" class="hidden fixed top-6 right-6 z-[99999] w-[340px] rounded-2xl shadow-2xl p-5 text-white font-semibold backdrop-blur-xl border border-white/10"></div>
 
     <div class="grid md:grid-cols-4 gap-4 mb-8">
-      <div class="bg-white p-5 rounded-2xl shadow border">
-        <p class="text-sm text-slate-500">Today</p>
-        <p id="todayTotalCard" class="text-2xl font-bold"><%= formatDuration(todayTotal) %></p>
+      <div class="bg-slate-900/70 border border-white/10 rounded-3xl p-5 shadow-xl">
+        <p class="text-sm text-slate-400">Today</p>
+        <p id="todayTotalCard" class="text-2xl font-bold text-white mt-2"><%= formatDuration(todayTotal) %></p>
       </div>
 
-      <div class="bg-white p-5 rounded-2xl shadow border">
-        <p class="text-sm text-slate-500">Time Left</p>
-        <p id="timeLeftCard" class="text-2xl font-bold"><%= formatDuration(timeLeft) %></p>
+      <div class="bg-slate-900/70 border border-white/10 rounded-3xl p-5 shadow-xl">
+        <p class="text-sm text-slate-400">Time Left</p>
+        <p id="timeLeftCard" class="text-2xl font-bold text-white mt-2"><%= formatDuration(timeLeft) %></p>
       </div>
 
-      <div class="bg-white p-5 rounded-2xl shadow border">
-        <p class="text-sm text-slate-500">Sessions</p>
-        <p id="sessionCountCard" class="text-2xl font-bold"><%= sessionCount %></p>
+      <div class="bg-slate-900/70 border border-white/10 rounded-3xl p-5 shadow-xl">
+        <p class="text-sm text-slate-400">Sessions</p>
+        <p id="sessionCountCard" class="text-2xl font-bold text-white mt-2"><%= sessionCount %></p>
       </div>
 
-      <div class="bg-white p-5 rounded-2xl shadow border">
-        <p class="text-sm text-slate-500">Status</p>
-        <p id="usageStatusCard" class="text-2xl font-bold"><%= usageStatus %></p>
+      <div class="bg-slate-900/70 border border-white/10 rounded-3xl p-5 shadow-xl">
+        <p class="text-sm text-slate-400">Status</p>
+        <p id="usageStatusCard" class="text-2xl font-bold text-white mt-2"><%= usageStatus %></p>
       </div>
     </div>
 
-    <div class="bg-white rounded-2xl shadow border p-6 mb-8">
-      <h2 class="text-2xl font-bold mb-4">Live Session Timer</h2>
-      <p id="liveTimer" class="text-5xl font-bold mb-2">00:00:00</p>
-      <p id="liveSessionHint" class="text-sm text-slate-500 mb-4">Start a session to see live updates.</p>
+    <div class="bg-slate-900/70 border border-white/10 rounded-3xl p-6 shadow-xl mb-8 text-center">
+      <h2 class="text-2xl font-bold mb-4">Live Session</h2>
+      <p id="liveTimer" class="text-6xl font-black mb-3">00:00:00</p>
+      <p id="liveSessionHint" class="text-slate-400 mb-6">Start session</p>
 
       <div class="grid md:grid-cols-2 gap-4 mb-4">
-        <select id="sessionCategory" class="border rounded-lg px-4 py-3">
-          <option value="Social Media">Social Media</option>
-          <option value="Entertainment">Entertainment</option>
-          <option value="Study">Study</option>
-          <option value="Gaming">Gaming</option>
-          <option value="Other">Other</option>
+        <select id="sessionCategory" class="bg-slate-950 border border-white/10 rounded-xl px-4 py-3">
+          <option>Social Media</option>
+          <option>Entertainment</option>
+          <option>Study</option>
+          <option>Gaming</option>
+          <option>Other</option>
         </select>
 
-        <input id="sessionNotes" class="border rounded-lg px-4 py-3" placeholder="Optional notes">
+        <input id="sessionNotes" placeholder="Notes" class="bg-slate-950 border border-white/10 rounded-xl px-4 py-3">
       </div>
 
-      <div class="flex gap-3">
-        <button id="startBtn" class="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold">Start</button>
-        <button id="stopBtn" class="bg-red-600 text-white px-6 py-3 rounded-lg font-semibold" disabled>Stop & Save</button>
+      <div class="flex justify-center gap-4">
+        <button id="startBtn" class="bg-green-500 px-6 py-3 rounded-xl font-semibold shadow-lg">
+          Start
+        </button>
+
+        <button id="stopBtn" class="bg-red-500 px-6 py-3 rounded-xl font-semibold shadow-lg" disabled>
+          Stop
+        </button>
       </div>
     </div>
 
-    <div class="bg-white rounded-2xl shadow border p-6 mb-8">
-      <h2 class="text-2xl font-bold mb-4">
-        <%= editEntry ? "Edit Entry" : "Add Manual Entry" %>
-      </h2>
-
-      <form action="<%= editEntry ? '/track-screen-time/update/' + editEntry._id : '/track-screen-time' %>" method="POST" class="grid md:grid-cols-2 gap-4">
-
-        <select name="category" class="border rounded-lg px-4 py-3" required>
-          <option value="Social Media" <%= editEntry && editEntry.category === 'Social Media' ? 'selected' : '' %>>Social Media</option>
-          <option value="Entertainment" <%= editEntry && editEntry.category === 'Entertainment' ? 'selected' : '' %>>Entertainment</option>
-          <option value="Study" <%= editEntry && editEntry.category === 'Study' ? 'selected' : '' %>>Study</option>
-          <option value="Gaming" <%= editEntry && editEntry.category === 'Gaming' ? 'selected' : '' %>>Gaming</option>
-          <option value="Other" <%= editEntry && editEntry.category === 'Other' ? 'selected' : '' %>>Other</option>
-        </select>
-
-        <input
-          type="number"
-          step="0.1"
-          min="0"
-          max="24"
-          name="hours"
-          value="<%= editEntry ? editEntry.hours : '' %>"
-          class="border rounded-lg px-4 py-3"
-          placeholder="Enter hours (e.g. 1.5)"
-          required
-        >
-
-        <input
-          type="text"
-          name="notes"
-          value="<%= editEntry ? editEntry.notes : '' %>"
-          class="md:col-span-2 border rounded-lg px-4 py-3"
-          placeholder="Optional notes"
-        >
-
-        <div class="md:col-span-2 flex gap-3">
-          <button class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold">
-            <%= editEntry ? "Update" : "Save" %>
-          </button>
-
-          <% if (editEntry) { %>
-            <a href="/track-screen-time" class="px-6 py-3 rounded-lg border">Cancel</a>
-          <% } %>
-        </div>
-      </form>
-    </div>
-
-    <div class="bg-white rounded-2xl shadow border p-6">
+    <div class="bg-slate-900/70 border border-white/10 rounded-3xl p-6 shadow-xl">
       <h2 class="text-2xl font-bold mb-4">Recent Entries</h2>
 
       <div id="recentEntriesList" class="space-y-4">
         <% entries.forEach(entry => { %>
-          <div class="border rounded-xl p-4">
-            <p><strong>Category:</strong> <%= entry.category %></p>
-            <p><strong>Time:</strong> <%= formatDuration(entry.hours) %></p>
-            <p><strong>Source:</strong> <%= entry.source || "manual" %></p>
-            <p><strong>Domain:</strong> <%= entry.domain || "N/A" %></p>
-            <p><strong>Title:</strong> <%= entry.title || "N/A" %></p>
-            <p><strong>Notes:</strong> <%= entry.notes || "No notes" %></p>
-
-            <div class="mt-3 flex gap-3">
-              <a href="/track-screen-time/edit/<%= entry._id %>" class="bg-yellow-500 text-white px-4 py-2 rounded-lg">Edit</a>
-
-              <form action="/track-screen-time/delete/<%= entry._id %>" method="POST">
-                <button class="bg-red-500 text-white px-4 py-2 rounded-lg">Delete</button>
-              </form>
-            </div>
+          <div class="bg-white/5 border border-white/10 rounded-2xl p-4">
+            <p><strong><%= entry.category %></strong></p>
+            <p><%= formatDuration(entry.hours) %></p>
+            <p class="text-sm text-slate-400"><%= entry.notes || "No notes" %></p>
           </div>
         <% }) %>
       </div>
     </div>
-
   </div>
 
   <%- include("../partials/footer") %>
@@ -167,219 +112,139 @@
   <script>
     let timerInterval = null;
     let elapsedSeconds = 0;
-    let liveWarningShown = false;
-    let liveDangerShown = false;
 
-    let currentTodayTotalHours = <%- JSON.stringify(todayTotal) %>;
-    let currentSessionCount = <%- JSON.stringify(sessionCount) %>;
-
-    const dailyLimit = Number(<%- JSON.stringify(dailyLimit) %>);
-    const warningLimit = Number(<%- JSON.stringify(warningLimit) %>);
-    const dangerLimit = Number(<%- JSON.stringify(dangerLimit) %>);
-
+    const popup = document.getElementById("thresholdPopup");
     const liveTimer = document.getElementById("liveTimer");
     const startBtn = document.getElementById("startBtn");
     const stopBtn = document.getElementById("stopBtn");
-    const todayTotalCard = document.getElementById("todayTotalCard");
-    const timeLeftCard = document.getElementById("timeLeftCard");
-    const sessionCountCard = document.getElementById("sessionCountCard");
-    const usageStatusCard = document.getElementById("usageStatusCard");
     const liveSessionHint = document.getElementById("liveSessionHint");
-    const thresholdPopup = document.getElementById("thresholdPopup");
-    const recentEntriesList = document.getElementById("recentEntriesList");
 
-    function formatClock(totalSeconds) {
-      const hrs = String(Math.floor(totalSeconds / 3600)).padStart(2, "0");
-      const mins = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, "0");
-      const secs = String(totalSeconds % 60).padStart(2, "0");
-      return `${hrs}:${mins}:${secs}`;
-    }
-
-    function formatDuration(hours) {
-      const totalMinutes = Math.round((Number(hours) || 0) * 60);
-      const hrs = Math.floor(totalMinutes / 60);
-      const mins = totalMinutes % 60;
-
-      if (hrs === 0) return `${mins} min`;
-      if (mins === 0) return `${hrs} hr`;
-      return `${hrs} hr ${mins} min`;
-    }
-
-    function getUsageStatus(totalHours) {
-      if (totalHours >= dangerLimit) return "Limit Reached";
-      if (totalHours >= warningLimit) return "Approaching Limit";
-      return "Healthy";
-    }
-
-    function renderStats(totalHours, sessionCountValue, usageStatusOverride = null, timeLeftOverride = null) {
-      const computedTimeLeft = Math.max(dailyLimit - totalHours, 0);
-      const timeLeftValue = timeLeftOverride !== null ? Number(timeLeftOverride) : computedTimeLeft;
-
-      todayTotalCard.textContent = formatDuration(totalHours);
-      timeLeftCard.textContent = formatDuration(timeLeftValue);
-      sessionCountCard.textContent = String(sessionCountValue);
-      usageStatusCard.textContent = usageStatusOverride || getUsageStatus(totalHours);
-    }
-
-    function showPopup(message, type) {
-      thresholdPopup.classList.remove("hidden");
-      thresholdPopup.textContent = message;
-
-      thresholdPopup.style.position = "fixed";
-      thresholdPopup.style.top = "24px";
-      thresholdPopup.style.right = "24px";
-      thresholdPopup.style.zIndex = "99999";
-      thresholdPopup.style.maxWidth = "360px";
-      thresholdPopup.style.padding = "16px 20px";
-      thresholdPopup.style.borderRadius = "16px";
-      thresholdPopup.style.color = "white";
-      thresholdPopup.style.fontWeight = "700";
-      thresholdPopup.style.boxShadow = "0 10px 30px rgba(0,0,0,0.25)";
-      thresholdPopup.style.border = "1px solid transparent";
+    function showPopup(msg, type) {
+      popup.classList.remove("hidden");
+      popup.innerText = msg;
 
       if (type === "warning") {
-        thresholdPopup.style.background = "#f59e0b";
-        thresholdPopup.style.borderColor = "#d97706";
+        popup.style.background = "linear-gradient(to right,#f59e0b,#d97706)";
       } else if (type === "danger") {
-        thresholdPopup.style.background = "#dc2626";
-        thresholdPopup.style.borderColor = "#b91c1c";
+        popup.style.background = "linear-gradient(to right,#ef4444,#b91c1c)";
       } else {
-        thresholdPopup.style.background = "#2563eb";
-        thresholdPopup.style.borderColor = "#1d4ed8";
+        popup.style.background = "linear-gradient(to right,#3b82f6,#1d4ed8)";
       }
 
-      clearTimeout(window.__thresholdPopupTimer);
-      window.__thresholdPopupTimer = setTimeout(() => {
-        thresholdPopup.classList.add("hidden");
-      }, 4500);
+      clearTimeout(window.__popupTimer);
+      window.__popupTimer = setTimeout(() => popup.classList.add("hidden"), 4000);
     }
 
-    function prependNewEntry(entry) {
-      const item = document.createElement("div");
-      item.className = "border rounded-xl p-4";
-      item.innerHTML = `
-        <p><strong>Category:</strong> ${entry.category || "N/A"}</p>
-        <p><strong>Time:</strong> ${formatDuration(entry.hours || 0)}</p>
-        <p><strong>Source:</strong> ${entry.source || "live-session"}</p>
-        <p><strong>Domain:</strong> ${entry.domain || "N/A"}</p>
-        <p><strong>Title:</strong> ${entry.title || "N/A"}</p>
-        <p><strong>Notes:</strong> ${entry.notes || "No notes"}</p>
-      `;
-      recentEntriesList.prepend(item);
+    function formatClock(s) {
+      const h = String(Math.floor(s / 3600)).padStart(2, "0");
+      const m = String(Math.floor((s % 3600) / 60)).padStart(2, "0");
+      const sec = String(s % 60).padStart(2, "0");
+      return `${h}:${m}:${sec}`;
     }
 
-    function checkThresholds(totalHours) {
-      if (!liveDangerShown && totalHours >= dangerLimit) {
-        liveDangerShown = true;
-        showPopup("Danger: You have crossed your danger threshold.", "danger");
-        return;
-      }
+    function startLocalTimer(fromSeconds = 0) {
+      if (timerInterval) clearInterval(timerInterval);
 
-      if (!liveWarningShown && totalHours >= warningLimit && totalHours < dangerLimit) {
-        liveWarningShown = true;
-        showPopup("Warning: You have reached your warning threshold.", "warning");
-      }
-    }
-
-    function updateLiveCards() {
-      const currentSessionHours = elapsedSeconds / 3600;
-      const estimatedTodayTotal = currentTodayTotalHours + currentSessionHours;
-      const estimatedTimeLeft = Math.max(dailyLimit - estimatedTodayTotal, 0);
-
-      renderStats(
-        estimatedTodayTotal,
-        currentSessionCount,
-        getUsageStatus(estimatedTodayTotal),
-        estimatedTimeLeft
-      );
-
-      checkThresholds(estimatedTodayTotal);
-    }
-
-    startBtn.addEventListener("click", () => {
-      if (timerInterval) return;
-
-      elapsedSeconds = 0;
-      liveWarningShown = false;
-      liveDangerShown = false;
-      liveTimer.textContent = "00:00:00";
-      liveSessionHint.textContent = "Live stats are updating...";
-      startBtn.disabled = true;
-      stopBtn.disabled = false;
-
-      checkThresholds(currentTodayTotalHours);
+      elapsedSeconds = fromSeconds;
+      liveTimer.innerText = formatClock(elapsedSeconds);
 
       timerInterval = setInterval(() => {
         elapsedSeconds++;
-        liveTimer.textContent = formatClock(elapsedSeconds);
-        updateLiveCards();
+        liveTimer.innerText = formatClock(elapsedSeconds);
       }, 1000);
-    });
+    }
 
-    stopBtn.addEventListener("click", async () => {
-      if (!timerInterval) return;
+    async function startBackendLiveSession() {
+      const response = await fetch("/live-session/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+      });
+
+      return response.json();
+    }
+
+    async function stopBackendLiveSession() {
+      const response = await fetch("/live-session/stop", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+      });
+
+      return response.json();
+    }
+
+    async function getBackendLiveSessionStatus() {
+      const response = await fetch("/live-session/status", {
+        method: "GET",
+        headers: { "Content-Type": "application/json" }
+      });
+
+      return response.json();
+    }
+
+    async function restoreLiveSession() {
+      try {
+        const data = await getBackendLiveSessionStatus();
+
+        if (!data.success || !data.active) {
+          startBtn.disabled = false;
+          stopBtn.disabled = true;
+          liveSessionHint.innerText = "Start session";
+          liveTimer.innerText = "00:00:00";
+          return;
+        }
+
+        const elapsedSecondsFromBackend = Math.floor((data.elapsedMinutes || 0) * 60);
+
+        // show restored session, but still allow user to start a fresh one
+        startBtn.disabled = false;
+        stopBtn.disabled = false;
+        liveSessionHint.innerText = "Live session active. Click Start to begin a new session.";
+        startLocalTimer(elapsedSecondsFromBackend);
+      } catch (error) {
+        console.error("restoreLiveSession error:", error);
+      }
+    }
+
+    startBtn.onclick = async () => {
+      try {
+        const data = await startBackendLiveSession();
+
+        if (!data.success) {
+          showPopup(data.message || "Could not start live session", "danger");
+          return;
+        }
+
+        startBtn.disabled = false;
+        stopBtn.disabled = false;
+        liveSessionHint.innerText = "New live session active. Alerts will trigger again.";
+        startLocalTimer(0);
+
+        showPopup("New live session started", "info");
+      } catch (error) {
+        console.error(error);
+        showPopup("Failed to start live session", "danger");
+      }
+    };
+
+    stopBtn.onclick = async () => {
+      try {
+        await stopBackendLiveSession();
+      } catch (error) {
+        console.error(error);
+      }
 
       clearInterval(timerInterval);
       timerInterval = null;
+      elapsedSeconds = 0;
+      liveTimer.innerText = "00:00:00";
       startBtn.disabled = false;
       stopBtn.disabled = true;
-      liveSessionHint.textContent = "Saving session...";
+      liveSessionHint.innerText = "Start session";
 
-      try {
-        const response = await fetch("/track-screen-time/session", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            category: document.getElementById("sessionCategory").value,
-            minutes: elapsedSeconds / 60,
-            notes: document.getElementById("sessionNotes").value
-          })
-        });
+      showPopup("Live session stopped", "info");
+    };
 
-        const data = await response.json();
-
-        if (data.success) {
-          if (data.alert) {
-            currentTodayTotalHours = Number(data.alert.todayTotal || currentTodayTotalHours);
-            currentSessionCount = Number(data.alert.sessionCount || (currentSessionCount + 1));
-
-            renderStats(
-              currentTodayTotalHours,
-              currentSessionCount,
-              data.alert.usageStatus || getUsageStatus(currentTodayTotalHours),
-              Number(data.alert.timeLeft || Math.max(dailyLimit - currentTodayTotalHours, 0))
-            );
-
-            if (data.alert.dangerTriggered) {
-              showPopup("Danger: You have crossed your danger threshold.", "danger");
-            } else if (data.alert.warningTriggered) {
-              showPopup("Warning: You have reached your warning threshold.", "warning");
-            } else {
-              showPopup("Session saved successfully.", "info");
-            }
-          } else {
-            currentTodayTotalHours += Number(data.entry?.hours || 0);
-            currentSessionCount += 1;
-            renderStats(currentTodayTotalHours, currentSessionCount);
-            showPopup("Session saved successfully.", "info");
-          }
-
-          prependNewEntry(data.entry);
-          liveSessionHint.textContent = "Session saved. Start a new one anytime.";
-          liveTimer.textContent = "00:00:00";
-          elapsedSeconds = 0;
-          document.getElementById("sessionNotes").value = "";
-        } else {
-          renderStats(currentTodayTotalHours, currentSessionCount);
-          showPopup(data.message || "Failed to save session.", "danger");
-          liveSessionHint.textContent = "Could not save session.";
-        }
-      } catch (error) {
-        console.error("SAVE ERROR:", error);
-        showPopup("Something went wrong while saving the session.", "danger");
-        liveSessionHint.textContent = "Could not save session.";
-      }
-    });
+    document.addEventListener("DOMContentLoaded", restoreLiveSession);
   </script>
 </body>
 </html>

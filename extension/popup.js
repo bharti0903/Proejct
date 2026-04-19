@@ -8,6 +8,12 @@ const blockedCountEl = document.getElementById("blockedCount");
 const errorMsgEl = document.getElementById("errorMsg");
 const refreshBtn = document.getElementById("refreshBtn");
 
+const liveAlertCard = document.getElementById("liveAlertCard");
+const liveAlertBadge = document.getElementById("liveAlertBadge");
+const liveAlertTitle = document.getElementById("liveAlertTitle");
+const liveAlertMessage = document.getElementById("liveAlertMessage");
+const liveAlertClose = document.getElementById("liveAlertClose");
+
 let remainingMs = 0;
 let timerInterval = null;
 
@@ -45,6 +51,22 @@ function startCountdown() {
   }, 1000);
 }
 
+function hideLiveAlert() {
+  liveAlertCard.classList.add("hidden");
+}
+
+function showLiveAlert({ type = "info", title = "Notification", message = "" }) {
+  liveAlertCard.className = "notification-card";
+  liveAlertCard.classList.add(type);
+
+  liveAlertBadge.textContent =
+    type === "danger" ? "Danger" :
+    type === "warning" ? "Warning" : "Info";
+
+  liveAlertTitle.textContent = title;
+  liveAlertMessage.textContent = message;
+}
+
 function renderSummary(data) {
   const summary = data.summary || {};
   const focusMode = data.focusMode || { active: false, blockedSites: [], remainingMs: 0 };
@@ -70,6 +92,22 @@ function renderSummary(data) {
     blockedCountEl.textContent = "0";
     if (timerInterval) clearInterval(timerInterval);
   }
+
+  if (summary.usageStatus === "Limit Reached") {
+    showLiveAlert({
+      type: "danger",
+      title: "Danger Limit Reached",
+      message: `Today's usage is ${summary.todayTotalFormatted || "--"}. Close distracting sites and take a break.`,
+    });
+  } else if (summary.usageStatus === "Approaching Limit") {
+    showLiveAlert({
+      type: "warning",
+      title: "Warning Limit Reached",
+      message: `You're close to your daily limit. Today's usage is ${summary.todayTotalFormatted || "--"}.`,
+    });
+  } else {
+    hideLiveAlert();
+  }
 }
 
 async function loadSummary() {
@@ -90,5 +128,9 @@ async function loadSummary() {
   });
 }
 
-document.addEventListener("DOMContentLoaded", loadSummary);
+document.addEventListener("DOMContentLoaded", () => {
+  loadSummary();
+  liveAlertClose.addEventListener("click", hideLiveAlert);
+});
+
 refreshBtn.addEventListener("click", loadSummary);

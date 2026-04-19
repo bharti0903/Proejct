@@ -1,37 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Profile Settings</title>
-  <link rel="stylesheet" href="/Output.css">
+  <link rel="stylesheet" href="/Output.css" />
 </head>
-<body class="bg-slate-50 min-h-screen text-slate-800">
+
+<body class="min-h-screen bg-slate-950 text-slate-100">
   <%- include("../partials/navbar") %>
 
-  <div class="max-w-6xl mx-auto px-4 py-8">
-    <h1 class="text-4xl font-bold text-slate-900 mb-8">Profile Settings</h1>
+  <div class="max-w-7xl mx-auto px-4 py-8">
+    <div class="relative overflow-hidden rounded-[28px] border border-white/10 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 shadow-2xl mb-8">
+      <div class="absolute -top-16 -left-16 h-56 w-56 rounded-full bg-indigo-500/20 blur-3xl"></div>
+      <div class="absolute -bottom-16 -right-16 h-56 w-56 rounded-full bg-cyan-500/20 blur-3xl"></div>
+
+      <div class="relative p-6 md:p-8">
+        <p class="text-sm uppercase tracking-[0.25em] text-indigo-300/80 mb-2">Account Center</p>
+        <h1 class="text-3xl md:text-4xl font-extrabold text-white">Profile Settings</h1>
+        <p class="text-slate-300 mt-3 max-w-2xl">
+          Manage your account, daily limits, alert thresholds, browser extension token, password, and custom tracking rules from one place.
+        </p>
+      </div>
+    </div>
 
     <% if (error) { %>
-      <div class="mb-4 p-4 rounded-lg bg-red-100 text-red-700 border border-red-200">
+      <div class="mb-4 rounded-2xl border border-rose-400/20 bg-rose-500/10 p-4 text-rose-200">
         <%= error %>
       </div>
     <% } %>
 
     <% if (success) { %>
-      <div class="mb-4 p-4 rounded-lg bg-green-100 text-green-700 border border-green-200">
+      <div class="mb-4 rounded-2xl border border-emerald-400/20 bg-emerald-500/10 p-4 text-emerald-200">
         <%= success %>
       </div>
     <% } %>
 
     <div class="grid lg:grid-cols-2 gap-8">
-      <!-- Account & Limits -->
-      <div class="bg-white rounded-3xl shadow border border-slate-200 p-8">
-        <h2 class="text-2xl font-bold text-slate-900 mb-6">Account & Limits</h2>
+      <div class="rounded-3xl border border-white/10 bg-slate-900/70 p-8 shadow-xl backdrop-blur">
+        <h2 class="text-2xl font-bold text-white mb-6">Account & Limits</h2>
 
         <form action="/profile-settings/update" method="POST" class="space-y-5">
           <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-2">
+            <label class="block text-sm font-semibold text-slate-300 mb-2">
               Full Name
             </label>
             <input
@@ -39,25 +50,25 @@
               name="name"
               value="<%= user.name %>"
               placeholder="Enter your full name"
-              class="w-full border border-slate-300 rounded-2xl px-5 py-4 text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              class="w-full rounded-2xl border border-white/10 bg-slate-950 px-5 py-4 text-lg text-slate-100 outline-none placeholder:text-slate-500 focus:border-indigo-400/40"
               required
-            >
+            />
           </div>
 
           <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-2">
+            <label class="block text-sm font-semibold text-slate-300 mb-2">
               Email Address
             </label>
             <input
               type="email"
               value="<%= user.email %>"
-              class="w-full border border-slate-300 rounded-2xl px-5 py-4 text-lg bg-slate-100 text-slate-600"
+              class="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-lg text-slate-400"
               disabled
-            >
+            />
           </div>
 
           <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-2">
+            <label class="block text-sm font-semibold text-slate-300 mb-2">
               Daily Limit
             </label>
             <input
@@ -68,14 +79,14 @@
               name="dailyLimit"
               value="<%= user.dailyLimit %>"
               placeholder="e.g. 4"
-              class="w-full border border-slate-300 rounded-2xl px-5 py-4 text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              class="w-full rounded-2xl border border-white/10 bg-slate-950 px-5 py-4 text-lg text-slate-100 outline-none placeholder:text-slate-500 focus:border-cyan-400/40"
               required
-            >
+            />
             <p class="text-sm text-slate-500 mt-2">Enter total daily limit in hours. Example: 4</p>
           </div>
 
           <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-2">
+            <label class="block text-sm font-semibold text-slate-300 mb-2">
               Warning Threshold
             </label>
             <div class="grid grid-cols-2 gap-4">
@@ -88,9 +99,9 @@
                   name="warningHours"
                   value="<%= Math.floor(user.warningLimit || 0) %>"
                   placeholder="1 hr"
-                  class="w-full border border-slate-300 rounded-2xl px-5 py-4 text-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                  class="w-full rounded-2xl border border-white/10 bg-slate-950 px-5 py-4 text-lg text-slate-100 outline-none placeholder:text-slate-500 focus:border-amber-400/40"
                   required
-                >
+                />
               </div>
 
               <div>
@@ -101,19 +112,17 @@
                   max="59"
                   name="warningMinutes"
                   value="<%= Math.round(((user.warningLimit || 0) % 1) * 60) %>"
-                  placeholder="60 min"
-                  class="w-full border border-slate-300 rounded-2xl px-5 py-4 text-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                  placeholder="30 min"
+                  class="w-full rounded-2xl border border-white/10 bg-slate-950 px-5 py-4 text-lg text-slate-100 outline-none placeholder:text-slate-500 focus:border-amber-400/40"
                   required
-                >
+                />
               </div>
             </div>
-            <p class="text-sm text-slate-500 mt-2">
-              Example: 1 hr 30 min
-            </p>
+            <p class="text-sm text-slate-500 mt-2">Example: 1 hr 30 min</p>
           </div>
 
           <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-2">
+            <label class="block text-sm font-semibold text-slate-300 mb-2">
               Danger Threshold
             </label>
             <div class="grid grid-cols-2 gap-4">
@@ -126,9 +135,9 @@
                   name="dangerHours"
                   value="<%= Math.floor(user.dangerLimit || 0) %>"
                   placeholder="2 hr"
-                  class="w-full border border-slate-300 rounded-2xl px-5 py-4 text-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                  class="w-full rounded-2xl border border-white/10 bg-slate-950 px-5 py-4 text-lg text-slate-100 outline-none placeholder:text-slate-500 focus:border-rose-400/40"
                   required
-                >
+                />
               </div>
 
               <div>
@@ -139,73 +148,70 @@
                   max="59"
                   name="dangerMinutes"
                   value="<%= Math.round(((user.dangerLimit || 0) % 1) * 60) %>"
-                  placeholder="60 min"
-                  class="w-full border border-slate-300 rounded-2xl px-5 py-4 text-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                  placeholder="0 min"
+                  class="w-full rounded-2xl border border-white/10 bg-slate-950 px-5 py-4 text-lg text-slate-100 outline-none placeholder:text-slate-500 focus:border-rose-400/40"
                   required
-                >
+                />
               </div>
             </div>
-            <p class="text-sm text-slate-500 mt-2">
-              Example: 2 hr 0 min
-            </p>
+            <p class="text-sm text-slate-500 mt-2">Example: 2 hr 0 min</p>
           </div>
 
           <button
             type="submit"
-            class="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xl font-semibold py-4 rounded-2xl transition"
+            class="w-full rounded-2xl bg-gradient-to-r from-cyan-500 to-indigo-600 py-4 text-lg font-semibold text-white shadow-lg shadow-cyan-900/30 hover:scale-[1.01] transition"
           >
             Save Preferences
           </button>
         </form>
       </div>
 
-      <!-- Password -->
-      <div class="bg-white rounded-3xl shadow border border-slate-200 p-8">
-        <h2 class="text-2xl font-bold text-slate-900 mb-6">Change Password</h2>
+      <div class="rounded-3xl border border-white/10 bg-slate-900/70 p-8 shadow-xl backdrop-blur">
+        <h2 class="text-2xl font-bold text-white mb-6">Change Password</h2>
 
         <form action="/profile-settings/password" method="POST" class="space-y-5">
           <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-2">
+            <label class="block text-sm font-semibold text-slate-300 mb-2">
               Current Password
             </label>
             <input
               type="password"
               name="currentPassword"
               placeholder="Enter current password"
-              class="w-full border border-slate-300 rounded-2xl px-5 py-4 text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              class="w-full rounded-2xl border border-white/10 bg-slate-950 px-5 py-4 text-lg text-slate-100 outline-none placeholder:text-slate-500 focus:border-indigo-400/40"
               required
-            >
+            />
           </div>
 
           <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-2">
+            <label class="block text-sm font-semibold text-slate-300 mb-2">
               New Password
             </label>
             <input
               type="password"
               name="newPassword"
               placeholder="Enter new password"
-              class="w-full border border-slate-300 rounded-2xl px-5 py-4 text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              class="w-full rounded-2xl border border-white/10 bg-slate-950 px-5 py-4 text-lg text-slate-100 outline-none placeholder:text-slate-500 focus:border-indigo-400/40"
               required
-            >
+            />
           </div>
 
           <div>
-            <label class="block text-sm font-semibold text-slate-700 mb-2">
+            <label class="block text-sm font-semibold text-slate-300 mb-2">
               Confirm New Password
             </label>
             <input
               type="password"
               name="confirmNewPassword"
               placeholder="Confirm new password"
-              class="w-full border border-slate-300 rounded-2xl px-5 py-4 text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              class="w-full rounded-2xl border border-white/10 bg-slate-950 px-5 py-4 text-lg text-slate-100 outline-none placeholder:text-slate-500 focus:border-indigo-400/40"
               required
-            >
+            />
           </div>
 
           <button
             type="submit"
-            class="w-full bg-slate-900 hover:bg-slate-800 text-white text-xl font-semibold py-4 rounded-2xl transition"
+            class="w-full rounded-2xl bg-gradient-to-r from-slate-700 to-slate-900 py-4 text-lg font-semibold text-white shadow-lg hover:scale-[1.01] transition"
           >
             Update Password
           </button>
@@ -213,25 +219,34 @@
       </div>
     </div>
 
-    <!-- Extension Token -->
-    <div class="mt-8 bg-white rounded-3xl shadow border border-slate-200 p-8">
-      <h2 class="text-2xl font-bold text-slate-900 mb-4">Browser Extension Token</h2>
-      <p class="text-slate-600 mb-4">
-        This token connects your browser extension with your account.
-      </p>
+    <div class="mt-8 rounded-3xl border border-white/10 bg-slate-900/70 p-8 shadow-xl backdrop-blur">
+      <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+        <div>
+          <h2 class="text-2xl font-bold text-white mb-2">Browser Extension Token</h2>
+          <p class="text-slate-400 max-w-2xl">
+            This token securely connects your browser extension to your account. Keep it private and regenerate it if needed.
+          </p>
+        </div>
 
-      <input
-        id="extensionTokenInput"
-        value="<%= user.extensionToken %>"
-        readonly
-        class="w-full border border-slate-300 rounded-2xl px-5 py-4 text-lg bg-slate-50 mb-4"
-      >
+        <div class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300">
+          Extension Sync Enabled
+        </div>
+      </div>
 
-      <div class="flex flex-wrap gap-3">
+      <div class="mt-6">
+        <input
+          id="extensionTokenInput"
+          value="<%= user.extensionToken %>"
+          readonly
+          class="w-full rounded-2xl border border-white/10 bg-slate-950 px-5 py-4 text-base text-slate-200 outline-none"
+        />
+      </div>
+
+      <div class="flex flex-wrap gap-3 mt-4">
         <button
           type="button"
           onclick="copyToken()"
-          class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-xl font-semibold"
+          class="rounded-2xl bg-gradient-to-r from-cyan-500 to-indigo-600 px-5 py-3 font-semibold text-white shadow-lg shadow-cyan-900/30"
         >
           Copy Token
         </button>
@@ -239,35 +254,49 @@
         <form action="/profile-settings/regenerate-extension-token" method="POST">
           <button
             type="submit"
-            class="bg-red-600 hover:bg-red-700 text-white px-5 py-3 rounded-xl font-semibold"
+            class="rounded-2xl bg-gradient-to-r from-rose-500 to-red-600 px-5 py-3 font-semibold text-white shadow-lg shadow-rose-900/30"
           >
             Regenerate Token
           </button>
         </form>
       </div>
+
+      <div id="copyTokenToast" class="hidden mt-4 rounded-2xl border border-emerald-400/20 bg-emerald-500/10 p-4 text-emerald-200">
+        Extension token copied successfully.
+      </div>
     </div>
 
-    <!-- Custom Tracking Rules -->
-    <div class="mt-8 bg-white rounded-3xl shadow border border-slate-200 p-8">
-      <h2 class="text-2xl font-bold text-slate-900 mb-4">Custom Tracking Rules</h2>
+    <div class="mt-8 rounded-3xl border border-white/10 bg-slate-900/70 p-8 shadow-xl backdrop-blur">
+      <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-6 mb-6">
+        <div>
+          <h2 class="text-2xl font-bold text-white mb-2">Custom Tracking Rules</h2>
+          <p class="text-slate-400">
+            Create custom rules to categorize websites by domain, full URL, title, or keyword match.
+          </p>
+        </div>
+
+        <div class="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300">
+          <%= trackingRules && trackingRules.length ? trackingRules.length : 0 %> Active Rule(s)
+        </div>
+      </div>
 
       <form action="/tracking-rules/add" method="POST" class="grid md:grid-cols-3 gap-4 mb-6">
         <input
           type="text"
           name="pattern"
           placeholder="e.g. youtube.com"
-          class="border border-slate-300 rounded-2xl px-5 py-4 text-lg"
+          class="rounded-2xl border border-white/10 bg-slate-950 px-5 py-4 text-lg text-slate-100 outline-none placeholder:text-slate-500"
           required
-        >
+        />
 
-        <select name="matchType" class="border border-slate-300 rounded-2xl px-5 py-4 text-lg">
+        <select name="matchType" class="rounded-2xl border border-white/10 bg-slate-950 px-5 py-4 text-lg text-slate-100 outline-none">
           <option value="domain">Domain</option>
           <option value="url">Full URL</option>
           <option value="title">Page Title</option>
           <option value="contains">Contains</option>
         </select>
 
-        <select name="category" class="border border-slate-300 rounded-2xl px-5 py-4 text-lg">
+        <select name="category" class="rounded-2xl border border-white/10 bg-slate-950 px-5 py-4 text-lg text-slate-100 outline-none">
           <option value="Social Media">Social Media</option>
           <option value="Entertainment">Entertainment</option>
           <option value="Study">Study</option>
@@ -276,7 +305,7 @@
         </select>
 
         <div class="md:col-span-3">
-          <button class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-semibold">
+          <button class="rounded-2xl bg-gradient-to-r from-indigo-500 to-fuchsia-600 px-6 py-3 font-semibold text-white shadow-lg">
             Add Rule
           </button>
         </div>
@@ -285,34 +314,56 @@
       <div class="space-y-4">
         <% if (trackingRules && trackingRules.length > 0) { %>
           <% trackingRules.forEach(rule => { %>
-            <div class="border rounded-2xl p-4 flex items-center justify-between gap-4">
-              <div>
-                <p><strong>Pattern:</strong> <%= rule.pattern %></p>
-                <p><strong>Match Type:</strong> <%= rule.matchType %></p>
-                <p><strong>Category:</strong> <%= rule.category %></p>
+            <div class="rounded-2xl border border-white/10 bg-white/5 p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div class="grid sm:grid-cols-3 gap-4 flex-1">
+                <div>
+                  <p class="text-xs uppercase tracking-wider text-slate-500">Pattern</p>
+                  <p class="text-slate-100 font-semibold mt-1 break-all"><%= rule.pattern %></p>
+                </div>
+
+                <div>
+                  <p class="text-xs uppercase tracking-wider text-slate-500">Match Type</p>
+                  <p class="text-slate-200 mt-1"><%= rule.matchType %></p>
+                </div>
+
+                <div>
+                  <p class="text-xs uppercase tracking-wider text-slate-500">Category</p>
+                  <p class="text-cyan-300 font-semibold mt-1"><%= rule.category %></p>
+                </div>
               </div>
 
               <form action="/tracking-rules/delete/<%= rule._id %>" method="POST">
-                <button class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl">
+                <button class="rounded-xl bg-gradient-to-r from-rose-500 to-red-600 px-4 py-2 text-white font-semibold">
                   Delete
                 </button>
               </form>
             </div>
           <% }) %>
         <% } else { %>
-          <p class="text-slate-500">No custom tracking rules added yet.</p>
+          <div class="rounded-2xl border border-dashed border-white/10 bg-white/5 p-6 text-center text-slate-400">
+            No custom tracking rules added yet.
+          </div>
         <% } %>
       </div>
     </div>
   </div>
 
   <%- include("../partials/footer") %>
+  <%- include("../partials/toast", { userId }) %>
 
   <script>
     function copyToken() {
       const input = document.getElementById("extensionTokenInput");
+      const toast = document.getElementById("copyTokenToast");
+
       navigator.clipboard.writeText(input.value).then(() => {
-        alert("Extension token copied");
+        toast.classList.remove("hidden");
+        clearTimeout(window.__copyTokenTimer);
+        window.__copyTokenTimer = setTimeout(() => {
+          toast.classList.add("hidden");
+        }, 2500);
+      }).catch(() => {
+        alert("Could not copy token");
       });
     }
   </script>

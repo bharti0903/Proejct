@@ -23,6 +23,7 @@ const profileRoutes = require("./routes/profileRoutes");
 const focusRoutes = require("./routes/focusRoutes");
 const extensionRoutes = require("./routes/extensionRoutes");
 const trackingRuleRoutes = require("./routes/trackingRuleRoutes");
+const liveSessionRoutes = require("./routes/liveSessionRoutes");
 const app = express();
 const server = http.createServer(app);
 
@@ -78,6 +79,7 @@ app.use("/", profileRoutes);
 app.use("/", focusRoutes);
 app.use("/", extensionRoutes);
 app.use("/", trackingRuleRoutes);
+app.use("/live-session", liveSessionRoutes);
 
 app.use((req, res) => {
   res.status(404).render("404");
