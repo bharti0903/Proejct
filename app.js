@@ -73,7 +73,7 @@ app.use("/", dashboardRoutes);
 app.use("/", authRoutes);
 app.use("/", screenTimeRoutes);
 app.use("/", reportRoutes);
-app.use("/", alertRoutes);
+app.use("/alerts", alertRoutes);
 app.use("/", challengeRoutes);
 app.use("/", profileRoutes);
 app.use("/", focusRoutes);
