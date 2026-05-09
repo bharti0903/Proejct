@@ -6,7 +6,8 @@
   "scripts": {
     "tailwind": "npx @tailwindcss/cli -i ./views/input.css -o ./public/Output.css",
     "tailwind:watch": "npx @tailwindcss/cli -i ./views/input.css -o ./public/Output.css --watch",
-    "start": "nodemon app.js",
+    "start": "node app.js",
+    "dev:server": "nodemon app.js",
     "dev": "concurrently \"nodemon app.js\" \"npm run tailwind:watch\""
   },
   "keywords": [],

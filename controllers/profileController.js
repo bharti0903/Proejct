@@ -7,6 +7,8 @@ const getTrackingRules = async (userId) => {
   return TrackingRule.find({ user: userId }).sort({ createdAt: -1 });
 };
 
+const roundLimitHours = (value) => Number(Number(value).toFixed(6));
+
 const getProfilePage = async (req, res) => {
   try {
     const user = await User.findById(req.session.userId);
@@ -118,8 +120,8 @@ const updateProfile = async (req, res) => {
 
     user.name = String(name).trim();
     user.dailyLimit = parsedDailyLimit;
-    user.warningLimit = Number(warningLimit.toFixed(2));
-    user.dangerLimit = Number(dangerLimit.toFixed(2));
+    user.warningLimit = roundLimitHours(warningLimit);
+    user.dangerLimit = roundLimitHours(dangerLimit);
 
     await user.save();
     req.session.userName = user.name;

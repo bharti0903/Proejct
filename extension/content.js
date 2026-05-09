@@ -1,4 +1,10 @@
 (function () {
+  if (window.__DAAT_CONTENT_SCRIPT_ACTIVE__) {
+    console.log("DAAT content script already active:", window.location.href);
+    return;
+  }
+
+  window.__DAAT_CONTENT_SCRIPT_ACTIVE__ = true;
   console.log("DAAT content script loaded:", window.location.href);
 
   let lastUrl = location.href;
@@ -128,9 +134,88 @@
     };
   }
 
+  function isAppPage() {
+    return (
+      location.origin === "http://localhost:5002" ||
+      location.origin === "http://127.0.0.1:5002"
+    );
+  }
+
+  function categorizeCurrentPage() {
+    const d = String(location.hostname || "").toLowerCase();
+    const t = String(document.title || "").toLowerCase();
+    const u = String(location.href || "").toLowerCase();
+
+    if (
+      d.includes("youtube") ||
+      d.includes("netflix") ||
+      d.includes("spotify") ||
+      d.includes("hotstar") ||
+      d.includes("primevideo")
+    ) {
+      return "Entertainment";
+    }
+
+    if (
+      d.includes("instagram") ||
+      d.includes("facebook") ||
+      d.includes("x.com") ||
+      d.includes("twitter") ||
+      d.includes("reddit") ||
+      d.includes("snapchat")
+    ) {
+      return "Social Media";
+    }
+
+    if (
+      d.includes("steam") ||
+      d.includes("roblox") ||
+      d.includes("epicgames") ||
+      d.includes("twitch")
+    ) {
+      return "Gaming";
+    }
+
+    if (
+      d.includes("leetcode") ||
+      d.includes("geeksforgeeks") ||
+      d.includes("coursera") ||
+      d.includes("udemy") ||
+      d.includes("openai.com") ||
+      d.includes("wikipedia") ||
+      t.includes("tutorial") ||
+      u.includes("docs")
+    ) {
+      return "Study";
+    }
+
+    return "Other";
+  }
+
+  function shouldBlockCurrentPage() {
+    if (isAppPage()) return false;
+    return ["Social Media", "Entertainment", "Gaming"].includes(categorizeCurrentPage());
+  }
+
   function removeExistingAlert() {
     const existing = document.getElementById("daat-glass-alert-wrap");
     if (existing) existing.remove();
+  }
+
+  function shouldSuppressPageAlert(message, type) {
+    const key = `${type}:${message}`;
+    const now = Date.now();
+    const root = document.documentElement;
+    const previousKey = root.dataset.daatLastAlertKey || "";
+    const previousAt = Number(root.dataset.daatLastAlertAt || 0);
+
+    if (previousKey === key && now - previousAt < 60000) {
+      return true;
+    }
+
+    root.dataset.daatLastAlertKey = key;
+    root.dataset.daatLastAlertAt = String(now);
+    return false;
   }
 
   function injectAnimationStyles() {
@@ -232,6 +317,8 @@
 
   function showPageAlert(message, type = "warning") {
     ensureBody(() => {
+      if (shouldSuppressPageAlert(message, type)) return;
+
       removeExistingAlert();
       injectAnimationStyles();
       playAlertSound(type);
@@ -250,7 +337,7 @@
       wrap.style.fontFamily = "Inter, Segoe UI, Roboto, Arial, sans-serif";
       wrap.style.transition =
         "transform 0.42s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.34s ease";
-      wrap.style.pointerEvents = "auto";
+      wrap.style.pointerEvents = "none";
 
       const card = document.createElement("div");
       card.style.position = "relative";
@@ -263,6 +350,7 @@
       card.style.webkitBackdropFilter = "blur(18px) saturate(140%)";
       card.style.boxShadow = theme.shadow;
       card.style.animation = "daatCardPulse 2.4s ease-in-out infinite";
+      card.style.pointerEvents = "auto";
 
       const glow1 = document.createElement("div");
       glow1.style.position = "absolute";
@@ -349,7 +437,7 @@
 
       const title = document.createElement("div");
       title.textContent = theme.title;
-      title.style.fontSize = "23px";
+      title.style.fontSize = "20px";
       title.style.fontWeight = "800";
       title.style.lineHeight = "1.2";
       title.style.color = "#ffffff";
@@ -358,7 +446,7 @@
       const body = document.createElement("div");
       body.textContent = message;
       body.style.fontSize = "16px";
-      body.style.lineHeight = "1.68";
+      body.style.lineHeight = "1.45";
       body.style.fontWeight = "500";
       body.style.color = "rgba(255,255,255,0.92)";
       body.style.wordBreak = "break-word";
@@ -366,7 +454,7 @@
       const helper = document.createElement("div");
       helper.textContent =
         type === "danger"
-          ? "You have crossed your allowed usage. Step away for a few minutes."
+          ? "This page will be blocked in 5 seconds."
           : "You are getting close to your daily threshold. A short break can help.";
       helper.style.marginTop = "12px";
       helper.style.fontSize = "13px";
@@ -379,18 +467,6 @@
       actions.style.gap = "10px";
       actions.style.marginTop = "15px";
       actions.style.flexWrap = "wrap";
-
-      const focusBtn = document.createElement("button");
-      focusBtn.textContent = type === "danger" ? "Block this page" : "Stay Focused";
-      focusBtn.style.border = "none";
-      focusBtn.style.cursor = "pointer";
-      focusBtn.style.padding = "10px 16px";
-      focusBtn.style.borderRadius = "14px";
-      focusBtn.style.fontSize = "13px";
-      focusBtn.style.fontWeight = "800";
-      focusBtn.style.letterSpacing = "0.2px";
-      focusBtn.style.color = "#0f172a";
-      focusBtn.style.background = "#ffffff";
 
       const closeBtn = document.createElement("button");
       closeBtn.textContent = "Dismiss";
@@ -433,7 +509,6 @@
 
       progressWrap.appendChild(progress);
 
-      actions.appendChild(focusBtn);
       actions.appendChild(closeBtn);
 
       textWrap.appendChild(badge);
@@ -475,16 +550,29 @@
         }, 380);
       }
 
-      focusBtn.onclick = () => {
-        if (type === "danger") {
-          showBlockedScreen("Your danger threshold has been crossed. Leave this page and reset your focus.");
-        } else {
-          dismiss();
-        }
-      };
-
       closeBtn.onclick = dismiss;
       cornerClose.onclick = dismiss;
+
+      if (type === "danger" && shouldBlockCurrentPage()) {
+        let remainingSeconds = 5;
+        helper.textContent = `This page will be blocked in ${remainingSeconds} seconds.`;
+
+        const blockCountdown = setInterval(() => {
+          remainingSeconds -= 1;
+
+          if (remainingSeconds <= 0) {
+            clearInterval(blockCountdown);
+            showBlockedScreen(
+              `Your danger threshold has been crossed. ${location.hostname} is blocked for this session.`
+            );
+            return;
+          }
+
+          helper.textContent = `This page will be blocked in ${remainingSeconds} seconds.`;
+        }, 1000);
+      } else {
+        setTimeout(dismiss, 9000);
+      }
     });
   }
 
@@ -499,6 +587,26 @@
         });
       } catch (error) {
         resolve({ backendUrl: "", extensionToken: "" });
+      }
+    });
+  }
+
+  async function wasLiveSessionAlertShown(startedAt, type) {
+    return new Promise((resolve) => {
+      try {
+        const sessionKey = startedAt || "current";
+        const key = `liveSessionAlertShown:${sessionKey}:${type}`;
+
+        chrome.storage.local.get([key], (data) => {
+          if (data[key]) {
+            resolve(true);
+            return;
+          }
+
+          chrome.storage.local.set({ [key]: true }, () => resolve(false));
+        });
+      } catch (error) {
+        resolve(false);
       }
     });
   }
@@ -535,19 +643,33 @@
         console.log("New exact live session detected");
       }
 
-      if (data.dangerTriggered && !liveDangerShown) {
+      const elapsedLabel = data.elapsedFormatted || (
+        data.elapsedSeconds !== undefined
+          ? `${Math.floor(data.elapsedSeconds / 60)}:${String(data.elapsedSeconds % 60).padStart(2, "0")}`
+          : "0:00"
+      );
+
+      if (
+        data.dangerTriggered &&
+        !liveDangerShown &&
+        !(await wasLiveSessionAlertShown(data.startedAt, "danger"))
+      ) {
         liveDangerShown = true;
         showPageAlert(
-          `🚨 Danger: Live session reached ${data.elapsedMinutes} min`,
+          `🚨 Danger: Live session reached ${elapsedLabel}`,
           "danger"
         );
         return;
       }
 
-      if (data.warningTriggered && !liveWarningShown) {
+      if (
+        data.warningTriggered &&
+        !liveWarningShown &&
+        !(await wasLiveSessionAlertShown(data.startedAt, "warning"))
+      ) {
         liveWarningShown = true;
         showPageAlert(
-          `⚠ Warning: Live session reached ${data.elapsedMinutes} min`,
+          `⚠ Warning: Live session reached ${elapsedLabel}`,
           "warning"
         );
       }

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Digital Addiction Awareness Tracker",
-  "version": "3.2.0",
+  "version": "3.2.4",
   "description": "Tracks browser usage and shows real-time alerts on websites like YouTube",
 
   "permissions": [

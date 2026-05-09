@@ -17,7 +17,10 @@ const getSignupPage = (req, res) => {
 
 const signup = async (req, res) => {
   try {
-    const { name, email, password, confirmPassword } = req.body;
+    const { email, password, confirmPassword } = req.body;
+    const name = req.body.name || [req.body.firstName, req.body.lastName]
+      .filter(Boolean)
+      .join(" ");
 
     if (!name || !email || !password || !confirmPassword) {
       return res.render("store/signup", {

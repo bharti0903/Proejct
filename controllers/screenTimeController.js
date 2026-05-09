@@ -2,6 +2,7 @@ const ScreenTime = require("../models/ScreenTime");
 const User = require("../models/User");
 const Alert = require("../models/Alert");
 const { getIO } = require("../sockets");
+const { emitAlert } = require("../utils/alertNotifier");
 
 const formatThreshold = (value) => {
   const hours = Math.floor(value || 0);
@@ -195,11 +196,7 @@ const handleDailyLimitAlert = async (userId) => {
         type: "warning",
       });
 
-      safeEmit(`user_${userId}`, "newAlert", {
-        id: newAlert._id,
-        type: newAlert.type,
-        message: newAlert.message,
-      });
+      await emitAlert(userId, newAlert);
 
       warningTriggered = true;
     }
@@ -224,11 +221,7 @@ const handleDailyLimitAlert = async (userId) => {
         type: "danger",
       });
 
-      safeEmit(`user_${userId}`, "newAlert", {
-        id: newAlert._id,
-        type: newAlert.type,
-        message: newAlert.message,
-      });
+      await emitAlert(userId, newAlert);
 
       dangerTriggered = true;
     }

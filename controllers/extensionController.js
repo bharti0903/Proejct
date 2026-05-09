@@ -4,6 +4,7 @@ const Alert = require("../models/Alert");
 const FocusSession = require("../models/FocusSession");
 const TrackingRule = require("../models/TrackingRule");
 const { getIO } = require("../sockets");
+const { emitAlert } = require("../utils/alertNotifier");
 
 const formatThreshold = (value) => {
   const hours = Math.floor(value || 0);
@@ -129,11 +130,7 @@ const createThresholdAlerts = async (userId) => {
         type: "warning",
       });
 
-      safeEmit(`user_${userId}`, "newAlert", {
-        id: newAlert._id,
-        type: newAlert.type,
-        message: newAlert.message,
-      });
+      await emitAlert(userId, newAlert);
 
       warningTriggered = true;
     }
@@ -158,11 +155,7 @@ const createThresholdAlerts = async (userId) => {
         type: "danger",
       });
 
-      safeEmit(`user_${userId}`, "newAlert", {
-        id: newAlert._id,
-        type: newAlert.type,
-        message: newAlert.message,
-      });
+      await emitAlert(userId, newAlert);
 
       dangerTriggered = true;
     }

@@ -193,7 +193,7 @@
           return;
         }
 
-        const elapsedSecondsFromBackend = Math.floor((data.elapsedMinutes || 0) * 60);
+        const elapsedSecondsFromBackend = Number(data.elapsedSeconds || 0);
 
         // show restored session, but still allow user to start a fresh one
         startBtn.disabled = false;

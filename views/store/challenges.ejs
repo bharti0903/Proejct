@@ -17,8 +17,12 @@
         return "bg-emerald-500/15 text-emerald-300 border border-emerald-400/20";
       }
 
-      if (s === "in progress") {
+      if (s === "active") {
         return "bg-amber-500/15 text-amber-300 border border-amber-400/20";
+      }
+
+      if (s === "failed") {
+        return "bg-rose-500/15 text-rose-300 border border-rose-400/20";
       }
 
       return "bg-slate-500/15 text-slate-300 border border-slate-400/20";
@@ -51,7 +55,7 @@
       <div class="rounded-3xl border border-white/10 bg-slate-900/70 p-5 shadow-xl backdrop-blur">
         <p class="text-sm text-slate-400">In Progress</p>
         <p class="text-3xl font-bold text-amber-300 mt-2">
-          <%= challenges.filter(c => String(c.status).toLowerCase() === "in progress").length %>
+          <%= challenges.filter(c => String(c.status).toLowerCase() === "active").length %>
         </p>
       </div>
 
@@ -62,6 +66,26 @@
         </p>
       </div>
     </div>
+
+    <form action="/challenges" method="POST" class="rounded-3xl border border-white/10 bg-slate-900/70 p-5 shadow-xl backdrop-blur mb-8">
+      <h2 class="text-xl font-bold text-white mb-4">Create Challenge</h2>
+      <div class="grid md:grid-cols-4 gap-4">
+        <input name="title" required placeholder="Challenge title" class="rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-slate-100 outline-none placeholder:text-slate-500" />
+        <input name="description" placeholder="Short description" class="rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-slate-100 outline-none placeholder:text-slate-500" />
+        <select name="category" class="rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-slate-100 outline-none">
+          <option value="Any">Any</option>
+          <option value="Social Media">Social Media</option>
+          <option value="Entertainment">Entertainment</option>
+          <option value="Study">Study</option>
+          <option value="Gaming">Gaming</option>
+          <option value="Other">Other</option>
+        </select>
+        <input name="targetHours" type="number" min="0" step="0.25" value="1" class="rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-slate-100 outline-none" />
+      </div>
+      <button class="mt-4 rounded-2xl bg-gradient-to-r from-cyan-500 to-indigo-600 px-5 py-3 text-white font-semibold shadow-lg">
+        Add Challenge
+      </button>
+    </form>
 
     <!-- Challenges List -->
     <div class="space-y-5">
@@ -99,12 +123,20 @@
             <!-- Right Action -->
             <div class="flex items-center gap-3">
               <% if (String(challenge.status).toLowerCase() !== "completed") { %>
-                <button class="rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 px-4 py-2 text-white font-semibold shadow-lg">
-                  Continue
-                </button>
+                <form action="/challenges/<%= challenge._id %>/status" method="POST">
+                  <input type="hidden" name="status" value="completed" />
+                  <button class="rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-600 px-4 py-2 text-white font-semibold shadow-lg">
+                    Mark Complete
+                  </button>
+                </form>
               <% } else { %>
                 <span class="text-emerald-300 font-semibold">✔ Completed</span>
               <% } %>
+              <form action="/challenges/<%= challenge._id %>/delete" method="POST">
+                <button class="rounded-xl bg-white/5 border border-white/10 px-4 py-2 text-slate-200 font-semibold">
+                  Delete
+                </button>
+              </form>
             </div>
 
           </div>

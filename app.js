@@ -62,6 +62,13 @@ app.use((req, res, next) => {
   next();
 });
 
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    status: "ok",
+    uptime: process.uptime(),
+  });
+});
+
 app.get("/", (req, res) => {
   if (req.session.userId) {
     return res.redirect("/dashboard");

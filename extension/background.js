@@ -3,6 +3,8 @@ const SUMMARY_ALARM = "refreshFocusSummary";
 const LIVE_SESSION_ALARM = "liveSessionCheck";
 const MIN_MINUTES_TO_SAVE = 0.01;
 const IDLE_THRESHOLD_SECONDS = 60;
+const DEFAULT_APP_ORIGIN = "http://localhost:5002";
+const LIMIT_BLOCK_CATEGORIES = ["Social Media", "Entertainment", "Gaming"];
 
 let currentTabId = null;
 let currentTabStart = null;
@@ -69,14 +71,19 @@ chrome.windows.onFocusChanged.addListener(async (windowId) => {
 
 chrome.tabs.onActivated.addListener(async () => {
   await flushCurrentTab({ resetAfterFlush: true });
+  await enforceLimitOnActiveTab();
   captureActiveTab();
 });
 
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-  if (tab.active && changeInfo.status === "complete") {
-    await enforceFocusModeOnTab(tab);
+  if (changeInfo.status === "complete") {
     await flushCurrentTab({ resetAfterFlush: true });
-    captureActiveTab();
+    await enforceFocusModeOnTab(tab);
+    await enforceDailyLimitOnTab(tab);
+
+    if (tab.active) {
+      captureActiveTab();
+    }
   }
 });
 
@@ -124,10 +131,144 @@ function shouldIgnoreUrl(url) {
     url.startsWith("chrome://") ||
     url.startsWith("edge://") ||
     url.startsWith("about:") ||
+    url.startsWith("data:") ||
+    url.startsWith("blob:") ||
     url.startsWith("chrome-extension://") ||
     url.startsWith("moz-extension://") ||
     url.startsWith("devtools://") ||
-    url.startsWith("view-source:")
+    url.startsWith("view-source:") ||
+    isAppUrl(url)
+  );
+}
+
+function isAppUrl(url) {
+  try {
+    const parsed = new URL(url);
+    const defaultApp = new URL(DEFAULT_APP_ORIGIN);
+
+    return (
+      parsed.origin === defaultApp.origin ||
+      ((parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1") &&
+        parsed.port === "5002")
+    );
+  } catch (error) {
+    return false;
+  }
+}
+
+function categorizeSite(domain = "", title = "", url = "") {
+  const d = String(domain || "").toLowerCase();
+  const t = String(title || "").toLowerCase();
+  const u = String(url || "").toLowerCase();
+
+  if (
+    d.includes("youtube") ||
+    d.includes("netflix") ||
+    d.includes("spotify") ||
+    d.includes("hotstar") ||
+    d.includes("primevideo")
+  ) {
+    return "Entertainment";
+  }
+
+  if (
+    d.includes("instagram") ||
+    d.includes("facebook") ||
+    d.includes("x.com") ||
+    d.includes("twitter") ||
+    d.includes("reddit") ||
+    d.includes("snapchat")
+  ) {
+    return "Social Media";
+  }
+
+  if (
+    d.includes("leetcode") ||
+    d.includes("geeksforgeeks") ||
+    d.includes("coursera") ||
+    d.includes("udemy") ||
+    d.includes("openai.com") ||
+    d.includes("wikipedia") ||
+    t.includes("tutorial") ||
+    u.includes("docs")
+  ) {
+    return "Study";
+  }
+
+  if (
+    d.includes("steam") ||
+    d.includes("roblox") ||
+    d.includes("epicgames") ||
+    d.includes("twitch")
+  ) {
+    return "Gaming";
+  }
+
+  return "Other";
+}
+
+function shouldBlockCategory(category) {
+  return LIMIT_BLOCK_CATEGORIES.includes(category);
+}
+
+function buildBlockedLimitPage(category, hostname) {
+  return (
+    "data:text/html;charset=utf-8," +
+    encodeURIComponent(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Daily Limit Reached</title>
+        <style>
+          body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            padding: 40px;
+            text-align: center;
+            background: #020617;
+            color: #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          .box {
+            max-width: 680px;
+            background: rgba(15, 23, 42, 0.94);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 24px;
+            padding: 34px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.38);
+          }
+          .badge {
+            display: inline-flex;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: rgba(248, 113, 113, 0.16);
+            color: #fecaca;
+            font-weight: 700;
+            margin-bottom: 14px;
+          }
+          h1 {
+            margin: 0 0 12px;
+            font-size: 34px;
+          }
+          p {
+            color: #cbd5e1;
+            line-height: 1.7;
+            margin: 0;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="box">
+          <div class="badge">Danger limit reached</div>
+          <h1>This ${category} page is blocked</h1>
+          <p>${hostname} is paused because your daily danger threshold has been reached. Study and other allowed categories can still be used.</p>
+        </div>
+      </body>
+      </html>
+    `)
   );
 }
 
@@ -235,6 +376,17 @@ async function blockCurrentPageOnTab(tabId, text) {
   }
 }
 
+async function wasLiveSessionAlertShown(startedAt, type) {
+  const sessionKey = startedAt || "current";
+  const key = `liveSessionAlertShown:${sessionKey}:${type}`;
+  const data = await chrome.storage.local.get([key]);
+
+  if (data[key]) return true;
+
+  await chrome.storage.local.set({ [key]: true });
+  return false;
+}
+
 async function checkLiveSessionAlerts() {
   try {
     const { backendUrl, extensionToken } = await chrome.storage.local.get([
@@ -282,25 +434,48 @@ async function checkLiveSessionAlerts() {
     const activeTab = tabs[0];
     if (!activeTab.id || !activeTab.url || shouldIgnoreUrl(activeTab.url)) return;
 
-    if (data.dangerTriggered && !liveDangerShown) {
-      liveDangerShown = true;
-
-      await showPageAlertOnTab(
-        activeTab.id,
-        `🚨 Danger: Live session limit crossed at ${data.elapsedMinutes} min`,
-        "danger"
+    if (data.dangerTriggered) {
+      const hostname = new URL(activeTab.url).hostname.toLowerCase();
+      const category = categorizeSite(hostname, activeTab.title || "", activeTab.url);
+      const elapsedLabel = data.elapsedFormatted || (
+        data.elapsedSeconds !== undefined
+          ? `${Math.floor(data.elapsedSeconds / 60)}:${String(data.elapsedSeconds % 60).padStart(2, "0")}`
+          : "0:00"
       );
 
-      await blockCurrentPageOnTab(
-        activeTab.id,
-        "Your live session crossed the danger limit. This page is blocked to protect your focus."
-      );
-    } else if (data.warningTriggered && !liveWarningShown) {
+      if (
+        !liveDangerShown &&
+        !(await wasLiveSessionAlertShown(data.startedAt, "danger"))
+      ) {
+        liveDangerShown = true;
+
+        await showPageAlertOnTab(
+          activeTab.id,
+          `🚨 Danger: Live session limit crossed at ${elapsedLabel}`,
+          "danger"
+        );
+      }
+
+      if (shouldBlockCategory(category)) {
+        await chrome.tabs.update(activeTab.id, {
+          url: buildBlockedLimitPage(category, hostname),
+        });
+      }
+    } else if (
+      data.warningTriggered &&
+      !liveWarningShown &&
+      !(await wasLiveSessionAlertShown(data.startedAt, "warning"))
+    ) {
       liveWarningShown = true;
+      const elapsedLabel = data.elapsedFormatted || (
+        data.elapsedSeconds !== undefined
+          ? `${Math.floor(data.elapsedSeconds / 60)}:${String(data.elapsedSeconds % 60).padStart(2, "0")}`
+          : "0:00"
+      );
 
       await showPageAlertOnTab(
         activeTab.id,
-        `⚠ Warning: Live session reached ${data.elapsedMinutes} min`,
+        `⚠ Warning: Live session reached ${elapsedLabel}`,
         "warning"
       );
     }
@@ -354,6 +529,12 @@ async function flushCurrentTab({ resetAfterFlush = false } = {}) {
     const data = await response.json().catch(() => ({}));
 
     if (data?.alert?.dangerTriggered) {
+      const category = categorizeSite(
+        currentTabData.domain,
+        currentTabData.title,
+        currentTabData.url
+      );
+
       chrome.notifications.create({
         type: "basic",
         iconUrl: "icon128.png",
@@ -371,10 +552,11 @@ async function flushCurrentTab({ resetAfterFlush = false } = {}) {
         "danger"
       );
 
-      await blockCurrentPageOnTab(
-        trackedTabId,
-        "You crossed your danger limit. This page is now blocked to protect your focus."
-      );
+      if (shouldBlockCategory(category)) {
+        await chrome.tabs.update(trackedTabId, {
+          url: buildBlockedLimitPage(category, currentTabData.domain),
+        });
+      }
     } else if (data?.alert?.warningTriggered) {
       chrome.notifications.create({
         type: "basic",
@@ -506,5 +688,88 @@ async function enforceFocusModeOnTab(tab) {
     });
   } catch (error) {
     console.log("enforceFocusModeOnTab error:", error);
+  }
+}
+
+async function wasDailyLimitNoticeShown(type, hostname, category) {
+  const day = new Date().toISOString().slice(0, 10);
+  const key = `dailyLimitNotice:${day}:${type}:${category}:${hostname}`;
+  const data = await chrome.storage.local.get([key]);
+
+  if (data[key]) return true;
+
+  await chrome.storage.local.set({ [key]: true });
+  return false;
+}
+
+async function getActiveTab() {
+  const tabs = await chrome.tabs.query({
+    active: true,
+    lastFocusedWindow: true,
+  });
+
+  return tabs && tabs.length ? tabs[0] : null;
+}
+
+async function enforceLimitOnActiveTab() {
+  try {
+    const tab = await getActiveTab();
+    if (!tab) return;
+    await enforceDailyLimitOnTab(tab);
+  } catch (error) {
+    console.log("enforceLimitOnActiveTab error:", error);
+  }
+}
+
+async function enforceDailyLimitOnTab(tab) {
+  try {
+    if (!tab?.id || !tab?.url || shouldIgnoreUrl(tab.url)) return;
+
+    const parsedUrl = new URL(tab.url);
+    const hostname = parsedUrl.hostname.toLowerCase();
+    const category = categorizeSite(hostname, tab.title || "", tab.url);
+
+    if (!shouldBlockCategory(category)) return;
+
+    const data = await refreshTodaySummary().catch(() => latestSummary);
+    const usageStatus = data?.summary?.usageStatus || "Healthy";
+
+    if (usageStatus === "Approaching Limit") {
+      if (await wasDailyLimitNoticeShown("warning", hostname, category)) return;
+
+      chrome.notifications.create({
+        type: "basic",
+        iconUrl: "icon128.png",
+        title: "Warning Limit Reached",
+        message: `${hostname} is ${category}. You are close to your daily limit.`,
+      });
+
+      if (tab.active) {
+        await showPageAlertOnTab(
+          tab.id,
+          `⚠ Warning: ${hostname} is categorized as ${category}. You are close to your daily limit.`,
+          "warning"
+        );
+      }
+
+      return;
+    }
+
+    if (usageStatus === "Limit Reached") {
+      if (!(await wasDailyLimitNoticeShown("danger", hostname, category))) {
+        chrome.notifications.create({
+          type: "basic",
+          iconUrl: "icon128.png",
+          title: "Danger Limit Reached",
+          message: `${hostname} is ${category} and has been blocked.`,
+        });
+      }
+
+      await chrome.tabs.update(tab.id, {
+        url: buildBlockedLimitPage(category, hostname),
+      });
+    }
+  } catch (error) {
+    console.log("enforceDailyLimitOnTab error:", error);
   }
 }

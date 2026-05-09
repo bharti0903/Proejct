@@ -23,6 +23,27 @@ A full-stack web application that helps users track screen time, view weekly usa
 - Authentication: Express Session
 - Real-time: Socket.IO
 
+## Run Locally
+
+```bash
+npm install
+cp .env.example .env
+npm run tailwind
+npm start
+```
+
+The app runs on `http://localhost:5002` by default.
+
+## Deployment
+
+Use `npm start` as the production start command. Set these environment variables on your hosting platform:
+
+- `MONGO_URI`
+- `SESSION_SECRET`
+- `PORT` if the platform does not inject one automatically
+
+The health check endpoint is `/health`.
+
 ## Project Structure
 
 ```bash
